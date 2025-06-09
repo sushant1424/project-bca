@@ -1,3 +1,21 @@
+# === Django / Python ===
 venv/
-frontend/node_modules/
+*.pyc
+__pycache__/
 
+
+# === Node / React / Vite ===
+node_modules/
+dist/
+build/
+
+# === Environment Variables ===
+.env
+.env.local
+.env.production
+
+# === OS / Editor / Logs ===
+.DS_Store
+*.log
+.vscode/
+.idea/
