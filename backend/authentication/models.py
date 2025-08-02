@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
+import os
+# from PIL import Image
 
 class User(AbstractUser):
     """
@@ -10,7 +12,13 @@ class User(AbstractUser):
     
     # Custom fields
     bio = models.TextField(max_length=500, blank=True, null=True)
-    avatar = models.URLField(blank=True, null=True)
+    avatar = models.URLField(blank=True, null=True)  # Keep for backward compatibility
+    profile_image = models.ImageField(
+        upload_to='profile_images/',
+        blank=True,
+        null=True,
+        help_text='Upload a profile image (JPG, PNG, WebP)'
+    )
     date_of_birth = models.DateField(blank=True, null=True)
     
     # Phone number with validation
@@ -55,3 +63,18 @@ class User(AbstractUser):
     def get_full_name(self):
         """Return the user's full name"""
         return f"{self.first_name} {self.last_name}".strip() or self.username
+    
+    def save(self, *args, **kwargs):
+        """Override save method"""
+        super().save(*args, **kwargs)
+        
+        # TODO: Re-enable image resizing when PIL is properly installed
+        # Image processing temporarily disabled due to PIL import issues
+        pass
+    
+    @property
+    def profile_image_url(self):
+        """Return the profile image URL or None"""
+        if self.profile_image:
+            return self.profile_image.url
+        return None
