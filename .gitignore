@@ -19,3 +19,14 @@ build/
 *.log
 .vscode/
 .idea/
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Media files
+media/
+
+# Utility scripts (if temporary)
+add_image_posts.py
+simple_posts.py
