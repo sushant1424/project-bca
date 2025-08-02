@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
+import API_CONFIG from '../config/api';
 
 const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
   const [categories, setCategories] = useState([]);
@@ -27,6 +29,10 @@ const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
+        // Set fallback categories if API fails
+        setCategories([
+          { id: 0, name: 'All', slug: 'all', color: '#6B7280', active: !selectedCategory }
+        ]);
       } finally {
         setLoading(false);
       }

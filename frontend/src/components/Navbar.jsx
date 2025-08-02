@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Search, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AuthModal from './AuthModal';
+import LogoutModal from './LogoutModal';
 
-const Navbar = () => {
+const Navbar = ({ onSearch }) => {
+  const navigate = useNavigate();
+  
   // State for mobile menu toggle
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
@@ -10,8 +14,14 @@ const Navbar = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   
+  // State for logout modal
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
   // State for user data
   const [user, setUser] = useState(null);
+  
+  // State for search
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Check if user is logged in on component mount
   useEffect(() => {
@@ -31,11 +41,17 @@ const Navbar = () => {
     setShowAuthModal(true);
   };
 
-  // Handle logout
-  const handleLogout = () => {
+  // Handle logout button click - show confirmation modal
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  // Handle confirmed logout
+  const handleConfirmLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setShowLogoutModal(false);
     window.location.reload();
   };
 
@@ -46,6 +62,39 @@ const Navbar = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+  };
+
+  // Handle mode change for login/signup redirection
+  const handleModeChange = (newMode) => {
+    setAuthMode(newMode);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Debounce search to avoid too many calls
+    clearTimeout(window.navbarSearchTimeout);
+    window.navbarSearchTimeout = setTimeout(() => {
+      if (onSearch) {
+        onSearch(query);
+      }
+    }, 300);
+  };
+
+  // Handle search submit (Enter key)
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (onSearch) {
+        onSearch(searchQuery);
+      }
+      // Navigate to home page if not already there
+      if (window.location.pathname !== '/') {
+        navigate('/');
+      }
     }
   };
 
@@ -62,10 +111,16 @@ const Navbar = () => {
             {/* Search Bar - Center (hidden on mobile) */}
             <div className="hidden md:flex flex-1 max-w-md mx-8">
               <div className="relative w-full">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search"
-                  className="block w-full px-4 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  placeholder="Search posts, authors..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchSubmit}
+                  className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -79,7 +134,7 @@ const Navbar = () => {
                     Hello, {user.username}! 👋
                   </span>
                   <button
-                    onClick={handleLogout}
+                    onClick={handleLogoutClick}
                     className="px-4 py-2 text-gray-700 hover:text-red-600 transition-colors duration-200 font-medium flex items-center"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -136,12 +191,12 @@ const Navbar = () => {
                 </div>
                 
                 {/* Mobile Navigation Links */}
-                <a href="#" className="block px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
-                  Home
-                </a>
-                <a href="#" className="block px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
-                  Write
-                </a>
+                <button className="block px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium w-full text-left">
+                  Profile
+                </button>
+                <button className="block px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium w-full text-left">
+                  Settings
+                </button>
                 
                 {/* Mobile Action Buttons */}
                 <div className="pt-4 pb-3 border-t border-gray-100">
@@ -152,7 +207,7 @@ const Navbar = () => {
                         Hello, {user.username}! 👋
                       </div>
                       <button 
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                         className="w-full flex items-center px-3 py-2 text-gray-700 hover:text-red-600 transition-colors duration-200 font-medium"
                       >
                         <LogOut className="w-5 h-5 mr-2" />
@@ -189,6 +244,14 @@ const Navbar = () => {
         isOpen={showAuthModal}
         onClose={handleModalClose}
         mode={authMode}
+        onModeChange={handleModeChange}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal 
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleConfirmLogout}
       />
     </>
   );
