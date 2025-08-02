@@ -1,11 +1,11 @@
 import React from 'react';
-import { Home, PenTool, BookOpen, Heart, User, Settings, LogOut } from 'lucide-react';
+import { Home, PenTool, BookOpen, Heart, User, Settings, LogOut, BarChart3 } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ onWriteClick, onDashboardClick }) => {
   return (
-    <div className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 min-h-screen">
+    <div className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 h-screen sticky top-0">
       {/* Main Navigation Section */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto">
         <nav className="space-y-1">
           {/* Primary Navigation Links */}
           <div className="space-y-1">
@@ -13,10 +13,20 @@ const Sidebar = () => {
               <Home className="w-5 h-5 mr-3" />
               <span className="font-medium">Home</span>
             </a>
-            <a href="#" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
+            <button 
+              onClick={onWriteClick}
+              className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left"
+            >
               <PenTool className="w-5 h-5 mr-3" />
               <span className="font-medium">Write</span>
-            </a>
+            </button>
+            <button 
+              onClick={onDashboardClick}
+              className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left"
+            >
+              <BarChart3 className="w-5 h-5 mr-3" />
+              <span className="font-medium">Dashboard</span>
+            </button>
           </div>
 
           {/* Divider */}
@@ -92,8 +102,8 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Bottom CTA Section */}
-      <div className="p-4 border-t border-gray-200">
+      {/* Bottom CTA Section - Fixed at bottom */}
+      <div className="p-4 border-t border-gray-200 bg-white">
         <div className="bg-gray-50 rounded-lg p-4">
           <h4 className="text-sm font-semibold text-gray-900 mb-2">Start Writing</h4>
           <p className="text-xs text-gray-600 mb-3">Share your thoughts with the world</p>

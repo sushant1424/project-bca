@@ -1,50 +1,133 @@
-import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const CategoriesBar = () => {
-  // Categories data - can be fetched from API later
-  const categories = [
-    { id: 1, name: 'Home', active: true },
-    { id: 2, name: 'Technology', active: false },
-    { id: 3, name: 'Culture', active: false },
-    { id: 4, name: 'Business', active: false },
-    { id: 5, name: 'Politics', active: false },
-    { id: 6, name: 'Finance', active: false },
-    { id: 7, name: 'Food & Drink', active: false },
-    { id: 8, name: 'Sports', active: false },
-    { id: 9, name: 'Art & Design', active: false },
-    { id: 10, name: 'Health', active: false },
-    { id: 11, name: 'Science', active: false },
-    { id: 12, name: 'Education', active: false },
-    { id: 13, name: 'Travel', active: false },
-    { id: 14, name: 'Fashion', active: false },
-    { id: 15, name: 'Entertainment', active: false },
-    { id: 16, name: 'Environment', active: false },
-  ];
+const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/');
+        if (response.ok) {
+          const data = await response.json();
+          // Add "All" category at the beginning
+          const allCategories = [
+            { id: 0, name: 'All', slug: 'all', color: '#6B7280', active: !selectedCategory },
+            ...data.map(cat => ({
+              ...cat,
+              active: selectedCategory === cat.slug
+            }))
+          ];
+          setCategories(allCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [selectedCategory]);
+
+  // Handle scroll arrows
+  const handleScroll = (direction) => {
+    const container = document.getElementById('categories-container');
+    if (container) {
+      const scrollAmount = 200;
+      const newPosition = direction === 'left' 
+        ? scrollPosition - scrollAmount 
+        : scrollPosition + scrollAmount;
+      
+      container.scrollTo({
+        left: newPosition,
+        behavior: 'smooth'
+      });
+      setScrollPosition(newPosition);
+    }
+  };
+
+  // Check scroll position for arrow visibility
+  useEffect(() => {
+    const container = document.getElementById('categories-container');
+    if (container) {
+      const checkScroll = () => {
+        setShowLeftArrow(container.scrollLeft > 0);
+        setShowRightArrow(
+          container.scrollLeft < container.scrollWidth - container.clientWidth
+        );
+      };
+
+      container.addEventListener('scroll', checkScroll);
+      checkScroll();
+
+      return () => container.removeEventListener('scroll', checkScroll);
+    }
+  }, [categories]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center space-x-2 py-3">
+            <div className="animate-pulse bg-gray-200 h-8 w-20 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-8 w-24 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-8 w-16 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Horizontal scrollable categories container */}
-        <div className="flex items-center space-x-2 py-3 overflow-x-auto scrollbar-hide">
-          {/* Category buttons */}
-          {categories.map((category) => (
+        <div className="relative flex items-center py-3">
+          {/* Left arrow */}
+          {showLeftArrow && (
             <button
-              key={category.id}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
-                category.active
-                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              onClick={() => handleScroll('left')}
+              className="absolute left-0 z-10 flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
             >
-              {category.name}
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
-          ))}
-          
-          {/* Scroll indicator arrow */}
-          <div className="flex items-center pl-2">
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+          )}
+
+          {/* Categories container */}
+          <div
+            id="categories-container"
+            className="flex items-center space-x-2 overflow-x-auto scrollbar-hide px-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => onCategorySelect(category.slug === 'all' ? null : category.slug)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
+                  category.active
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
           </div>
+
+          {/* Right arrow */}
+          {showRightArrow && (
+            <button
+              onClick={() => handleScroll('right')}
+              className="absolute right-0 z-10 flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            </button>
+          )}
         </div>
       </div>
     </div>
