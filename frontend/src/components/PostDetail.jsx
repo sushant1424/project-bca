@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, User, Calendar, Bookmark, X } from 'lucide-react';
+import { X, Heart, MessageCircle, User, Calendar, Bookmark, Share2, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Button } from './ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { authenticatedFetch, buildApiUrl } from '../config/api';
 import API_CONFIG from '../config/api';
-import { ToastContainer } from './ToastNotification';
 import useToast from '../hooks/useToast';
+import { ToastContainer } from './ToastNotification';
 
 const PostDetail = () => {
   const { id: postId } = useParams();
@@ -33,6 +36,28 @@ const PostDetail = () => {
     }
   }, [postId]);
 
+  // Track post view - only counts when user actually views the full post
+  const trackPostView = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Token ${token}`;
+      }
+
+      await fetch(`http://127.0.0.1:8000/api/posts/${postId}/view/`, {
+        method: 'POST',
+        headers: headers,
+      });
+    } catch (error) {
+      console.error('Error tracking post view:', error);
+      // Don't show error to user as view tracking is not critical for UX
+    }
+  };
+
   const fetchPostDetails = async () => {
     try {
       setLoading(true);
@@ -52,6 +77,10 @@ const PostDetail = () => {
       if (response.ok) {
         const data = await response.json();
         setPost(data);
+        
+        // Track view after successfully loading the post content
+        // This ensures views are only counted when users actually view the full post
+        trackPostView(postId);
       } else {
         setError('Failed to load post');
       }
@@ -318,9 +347,19 @@ const PostDetail = () => {
 
 
 
-// Handle back navigation
+// Handle back navigation - smart navigation based on referrer
 const handleBack = () => {
-  navigate('/');
+  // Check if user came from library page
+  const referrer = document.referrer;
+  if (referrer.includes('/library')) {
+    navigate('/library');
+  } else if (window.history.length > 1) {
+    // Use browser back if available
+    navigate(-1);
+  } else {
+    // Fallback to home page
+    navigate('/');
+  }
 };
 
 if (loading) {
@@ -378,6 +417,17 @@ if (!post) {
 
       {/* Main Content Container */}
       <div className="max-w-2xl mx-auto px-6 py-12">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button 
+            onClick={handleBack}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back</span>
+          </button>
+        </div>
+        
         {/* Category Tag */}
         {post.category && (
           <div className="mb-6">
@@ -457,7 +507,7 @@ if (!post) {
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
-                  {/* Sample avatars for likes */}
+                  {/* User avatars for likes */}
                   <div className="w-6 h-6 bg-gray-300 rounded-full border-2 border-white"></div>
                   <div className="w-6 h-6 bg-blue-300 rounded-full border-2 border-white"></div>
                   <div className="w-6 h-6 bg-green-300 rounded-full border-2 border-white"></div>
@@ -508,7 +558,9 @@ if (!post) {
               onClick={handleShare}
               className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-gray-600 hover:text-green-600"
             >
-              <Share2 className="w-5 h-5" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+              </svg>
               <span className="font-medium">Share</span>
             </button>
           </div>

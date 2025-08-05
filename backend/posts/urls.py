@@ -8,11 +8,17 @@ urlpatterns = [
     path('', views.post_list, name='post_list'),
     path('search/', views.search_posts, name='search_posts'),
     path('<int:pk>/', views.post_detail, name='post_detail'),
+    path('<int:pk>/view/', views.track_post_view, name='track_post_view'),
     path('<int:pk>/like/', views.like_post, name='like_post'),
     
     # Comment URLs
+    path('comments/', views.all_comments_list, name='all_comments_list'),
     path('<int:post_pk>/comments/', views.comment_list, name='comment_list'),
+    path('comments/<int:pk>/', views.comment_detail, name='comment_detail'),
     path('comments/<int:pk>/like/', views.like_comment, name='like_comment'),
+    
+    # User posts endpoint (for frontend compatibility) - must come before users/ patterns
+    path('user/<int:user_id>/', views.user_posts, name='user_posts_by_id'),
     
     # Follow URLs
     path('users/<int:user_id>/follow/', views.follow_user, name='follow_user'),
@@ -22,16 +28,21 @@ urlpatterns = [
     
     # User Dashboard URLs
     path('users/stats/', views.user_stats, name='user_stats'),
-    path('users/posts/', views.user_posts, name='user_posts'),
+    path('admin/dashboard-stats/', views.admin_dashboard_stats, name='admin_dashboard_stats'),
+    path('users/posts/', views.current_user_posts, name='current_user_posts'),
     path('users/library/', views.user_library, name='user_library'),
     path('users/favorites/', views.user_favorites, name='user_favorites'),
     path('users/following/', views.user_following_list, name='user_following_list'),
+    
+    # My posts endpoint (for frontend compatibility)
+    path('my-posts/', views.user_posts_list, name='my_posts'),
     
     # Following feed
     path('following-feed/', views.following_feed, name='following_feed'),
     
     # Save post to library
     path('library/save/', views.save_post, name='save_post'),
+    path('<int:post_id>/save/', views.save_post, name='save_post_by_id'),
     
     # Trending posts
     path('trending/', views.trending_posts, name='trending_posts'),
@@ -41,5 +52,6 @@ urlpatterns = [
     
     # Category URLs
     path('categories/', views.category_list, name='category_list'),
+    path('categories/<int:pk>/', views.category_detail, name='category_detail'),
     path('categories/<slug:category_slug>/', views.category_posts, name='category_posts'),
 ] 

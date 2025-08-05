@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Post from './Post';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ToastContainer } from './ToastNotification';
-import useToast from '../hooks/useToast';
+import { useLike } from '../contexts/LikeContext';
+import { useToast } from '../context/ToastContext';
+import { Loader2 } from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from './ui/pagination';
 
 const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults, isSearching }) => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { showSuccess, showError, showWarning } = useToast();
+  const { initializePostLikes, handleLike: globalHandleLike } = useLike();
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPrevPage, setHasPrevPage] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-  const { toasts, showWarning, showSuccess, removeToast } = useToast();
 
   // Get auth token from localStorage
   const getAuthToken = () => {
@@ -47,18 +57,17 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Unauthorized - user not logged in, show sample posts
-          console.log('User not authenticated, showing sample posts');
-          const samplePosts = [
+        if (response.status === 401 || response.status === 404) {
+          // Show demo posts when API is not available or user not authenticated
+          const demoPosts = [
             {
               id: 1,
               title: "Welcome to Wrytera",
-              content: "This is a sample post. Sign in to see real posts and interact with the community.",
-              excerpt: "This is a sample post. Sign in to see real posts and interact with the community.",
+              content: "This is a demo post. Start exploring our platform by creating your own content!",
+              excerpt: "This is a demo post. Start exploring our platform by creating your own content!",
               author: {
                 id: 1,
-                username: "Wrytera",
+                username: "Demo User",
                 avatar: null
               },
               created_at: new Date().toISOString(),
@@ -88,7 +97,18 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
               image: null
             }
           ];
-          setPosts(samplePosts);
+          
+          // Use backend is_saved field directly
+          const postsWithSavedStatus = demoPosts.map(post => ({
+            ...post,
+            is_saved: post.is_saved || false,
+            author: {
+              ...post.author,
+              is_following: false
+            }
+          }));
+          
+          setPosts(postsWithSavedStatus);
           setHasNextPage(false);
           setHasPrevPage(false);
           setTotalPages(1);
@@ -101,67 +121,77 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       const data = await response.json();
       
       // Handle pagination data and ensure posts is always an array
+      let postsData = [];
       if (data && data.results && Array.isArray(data.results)) {
-        setPosts(data.results);
+        postsData = data.results;
         setHasNextPage(!!data.next);
         setHasPrevPage(!!data.previous);
         setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 posts per page
       } else if (data && Array.isArray(data)) {
-        setPosts(data);
-        setHasNextPage(false);
+        postsData = data;
+        // Initialize like context with post data
+        initializePostLikes(postsData);
+        setLoading(false);
         setHasPrevPage(false);
         setTotalPages(1);
       } else {
         // Fallback to empty array if data format is unexpected
         console.warn('Unexpected data format:', data);
-        setPosts([]);
+        postsData = [];
         setHasNextPage(false);
         setHasPrevPage(false);
         setTotalPages(1);
       }
+      
+      // Initialize user-specific saved state from localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+      const userSavedKey = currentUser ? `savedPosts_${currentUser.id}` : 'savedPosts_guest';
+      const savedPosts = JSON.parse(localStorage.getItem(userSavedKey) || '[]');
+      
+      // Fetch real follow status from backend API
+      const authToken = getAuthToken();
+      const uniqueAuthorIds = [...new Set(postsData.map(post => post.author?.id).filter(Boolean))];
+      const followStatusMap = {};
+      
+      if (authToken && uniqueAuthorIds.length > 0) {
+        try {
+          // Fetch current user's following list
+          const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+            headers: {
+              'Authorization': `Token ${authToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (followingResponse.ok) {
+            const followingData = await followingResponse.json();
+            const followingIds = followingData.map(user => user.id);
+            
+            // Create follow status map
+            uniqueAuthorIds.forEach(authorId => {
+              followStatusMap[authorId] = followingIds.includes(authorId);
+            });
+          }
+        } catch (followError) {
+          console.error('Error fetching follow status:', followError);
+        }
+      }
+      
+      const postsWithLocalState = postsData.map(post => ({
+        ...post,
+        is_saved: savedPosts.includes(post.id) || post.is_saved || false,
+        author: {
+          ...post.author,
+          is_following: followStatusMap[post.author?.id] || post.author.is_following || false
+        }
+      }));
+      
+      setPosts(postsWithLocalState);
     } catch (err) {
       console.error('Error fetching posts:', err);
       setError('Failed to load posts. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Handle post like/unlike
-  const handleLike = async (postId) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        showWarning('Sign In Required', 'Please sign in to like posts');
-        return;
-      }
-
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/like/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        // Update the post in the list
-        setPosts(prevPosts => 
-          prevPosts.map(post => {
-            if (post.id === postId) {
-              const isLiked = !post.is_liked;
-              return {
-                ...post,
-                is_liked: isLiked,
-                like_count: isLiked ? post.like_count + 1 : post.like_count - 1
-              };
-            }
-            return post;
-          })
-        );
-      }
-    } catch (error) {
-      console.error('Error liking post:', error);
     }
   };
 
@@ -174,6 +204,11 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
         return;
       }
 
+      // Find current follow status
+      const currentPost = posts.find(post => post.author.id === userId);
+      const isCurrentlyFollowing = currentPost?.author?.is_following || false;
+      
+      // Call backend API to follow/unfollow user
       const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
         method: 'POST',
         headers: {
@@ -182,22 +217,53 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
         },
       });
 
-      if (response.ok) {
-        // Update posts to reflect follow status
-        setPosts(prevPosts => 
-          prevPosts.map(post => {
-            if (post.author.id === userId) {
-              return {
-                ...post,
-                is_following_author: !post.is_following_author
-              };
-            }
-            return post;
-          })
-        );
+      if (!response.ok) {
+        throw new Error('Failed to update follow status');
+      }
+
+      const data = await response.json();
+      const newFollowingState = data.following;
+      
+      // Update posts to reflect follow status change
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.author.id === userId 
+            ? { ...post, author: { ...post.author, is_following: newFollowingState } }
+            : post
+        )
+      );
+      
+      // Follow functionality handled entirely by backend API
+      if (newFollowingState) {
+        showSuccess('Following', `You are now following this user!`);
+      } else {
+        showSuccess('Unfollowed', `You have unfollowed this user.`);
       }
     } catch (error) {
       console.error('Error following user:', error);
+      showWarning('Error', 'Failed to update follow status. Please try again.');
+    }
+  };
+
+  // Handle post like/unlike using global context
+  const handleLike = async (postId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showWarning('Sign In Required', 'Please sign in to like posts');
+        return;
+      }
+
+      // Find the current post to get its like state
+      const currentPost = posts.find(post => post.id === postId);
+      if (!currentPost) return;
+
+      // Use global like handler
+      const result = await globalHandleLike(postId, currentPost.is_liked, currentPost.like_count);
+      showSuccess('Success', result.liked ? 'Post liked!' : 'Post unliked!');
+    } catch (error) {
+      console.error('Error liking post:', error);
+      showError('Error', 'Failed to update like status');
     }
   };
 
@@ -268,7 +334,7 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
     }
   };
 
-  // Handle save to library
+  // Handle save/unsave to library
   const handleSave = async (postId) => {
     try {
       const token = getAuthToken();
@@ -277,35 +343,60 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
         return;
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/library/save/`, {
+      // Call backend API to save/unsave post
+      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/save/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ post_id: postId }),
       });
 
       if (response.ok) {
-        showSuccess('Success', 'Post saved to your library!');
-      } else {
-        let errorMessage = 'Failed to save post. Please try again.';
-        try {
-          const errorData = await response.json();
-          console.log('Save error response:', errorData);
-          if (response.status === 400 && errorData.message && errorData.message.includes('already saved')) {
-            showWarning('Already Saved', 'This post is already in your library');
-            return;
+        const data = await response.json();
+        const newSavedState = data.saved;
+        
+        // Update user-specific localStorage for saved posts
+        const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+        if (currentUser) {
+          const userSavedKey = `savedPosts_${currentUser.id}`;
+          const savedPosts = JSON.parse(localStorage.getItem(userSavedKey) || '[]');
+          
+          if (newSavedState) {
+            if (!savedPosts.includes(postId)) {
+              savedPosts.push(postId);
+            }
+          } else {
+            const index = savedPosts.indexOf(postId);
+            if (index > -1) {
+              savedPosts.splice(index, 1);
+            }
           }
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
+          
+          localStorage.setItem(userSavedKey, JSON.stringify(savedPosts));
         }
-        showWarning('Error', errorMessage);
+        
+        // Update the post's saved state in the posts array
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === postId 
+              ? { ...post, is_saved: newSavedState }
+              : post
+          )
+        );
+        
+        // Show success message
+        showSuccess(
+          newSavedState ? 'Saved' : 'Removed', 
+          data.message
+        );
+      } else {
+        throw new Error('Failed to save post');
       }
+      
     } catch (error) {
       console.error('Error saving post:', error);
-      showWarning('Error', 'Failed to save post. Please try again.');
+      showWarning('Error', 'Failed to update post. Please try again.');
     }
   };
 
@@ -319,6 +410,8 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchPosts(page);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Loading state
@@ -403,55 +496,49 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
 
       {/* Pagination - only show when not searching */}
       {showPagination && (hasNextPage || hasPrevPage) && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={!hasPrevPage}
-              className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md ${
-                    currentPage === pageNum
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            {totalPages > 5 && (
-              <span className="px-2 py-2 text-sm text-gray-500">...</span>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={!hasNextPage}
-              className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
-          </div>
+        <div className="mt-8 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={!hasPrevPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(pageNum)}
+                      isActive={currentPage === pageNum}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              
+              {totalPages > 5 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={!hasNextPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
       
-      {/* Toast Notifications */}
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+
     </div>
   );
 };

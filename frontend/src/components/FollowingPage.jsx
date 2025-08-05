@@ -1,37 +1,61 @@
 import React, { useState, useEffect } from 'react';
+import { Heart, Search, TrendingUp, BarChart3, Users, UserCheck, Loader2, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, ArrowLeft, Users, Sparkles } from 'lucide-react';
 import Post from './Post';
 import { ToastContainer } from './ToastNotification';
 import useToast from '../hooks/useToast';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from './ui/pagination';
+import { Input } from './ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 const FollowingPage = () => {
   const navigate = useNavigate();
-  const { toasts, showWarning, showSuccess, showError, removeToast } = useToast();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postsPerPage] = useState(6); // 6 posts per page for better pagination demo
+  const [followedUsersScrollPosition, setFollowedUsersScrollPosition] = useState(0);
+  const [followedUsers, setFollowedUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const { toasts, showSuccess, removeToast } = useToast();
+
+  // Handle back navigation
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
+  // Handle post click to navigate to post detail
+  const handlePostClick = (postId) => {
+    navigate(`/post/${postId}`);
+  };
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
-    if (userData && token) {
-      setUser(JSON.parse(userData));
-      fetchFollowingPosts();
-    } else {
-      showError('Access Denied', 'Please sign in to view your following feed');
-      setTimeout(() => navigate('/'), 2000);
-    }
+    fetchFollowingPosts();
+    loadFollowedUsers();
   }, []);
 
-  const fetchFollowingPosts = async () => {
+  const loadFollowedUsers = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('http://127.0.0.1:8000/api/posts/following-feed/', {
+      const token = getAuthToken();
+      if (!token) return;
+
+      // Call the backend API to get the current user's following list
+      const response = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
@@ -39,142 +63,223 @@ const FollowingPage = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
+        const followingData = await response.json();
+        console.log('Fetched following users from backend:', followingData);
+        setFollowedUsers(followingData);
       } else {
-        setError('Failed to load following posts');
+        console.error('Failed to fetch following users:', response.status);
+        setFollowedUsers([]);
       }
     } catch (error) {
+      console.error('Error loading followed users:', error);
+    }
+  };
+
+  const getAuthToken = () => localStorage.getItem('token');
+
+  const fetchFollowingPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = getAuthToken();
+      
+      if (!token) {
+        setError('Please login to view your following feed');
+        setLoading(false);
+        return;
+      }
+
+      // Call backend API to get following feed posts
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/posts/following-feed/', {
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Following feed API response:', data);
+          const postsData = Array.isArray(data) ? data : (data.results || []);
+          
+          const postsWithFollowing = postsData.map(post => ({
+            ...post,
+            author: { ...post.author, is_following: true }
+          }));
+          
+          setPosts(postsWithFollowing);
+          setLoading(false);
+          return;
+        }
+      } catch (apiError) {
+        console.log('API not available, using fallback');
+      }
+
+      // Fallback: Get all posts and filter
+      let allPosts = [];
+      for (let page = 1; page <= 3; page++) {
+        try {
+          const response = await fetch(`http://127.0.0.1:8000/api/posts/?page=${page}`, {
+            headers: {
+              'Authorization': `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const pagePosts = data.results || [];
+            allPosts = [...allPosts, ...pagePosts];
+          }
+        } catch (err) {
+          break;
+        }
+      }
+      
+      const followingPosts = allPosts
+        .filter(post => followedUsers.includes(post.author.id))
+        .map(post => ({
+          ...post,
+          author: { ...post.author, is_following: true }
+        }));
+      
+      setPosts(followingPosts);
+      
+    } catch (error) {
       console.error('Error fetching following posts:', error);
-      setError('Network error occurred');
+      setError('Failed to load following feed');
     } finally {
       setLoading(false);
     }
   };
 
-  // Post interaction handlers (similar to PostList)
-  const handleLike = async (postId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showWarning('Sign In Required', 'Please sign in to like posts');
-        return;
-      }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/like/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { ...post, is_liked: data.liked, like_count: data.like_count }
-            : post
-        ));
-        showSuccess('Success', data.liked ? 'Post liked!' : 'Post unliked!');
-      }
-    } catch (error) {
-      showError('Error', 'Failed to update like status');
+  // Filter posts based on search term and selected user
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.author.username.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesUser = selectedUser ? post.author.id === selectedUser.id : true;
+    
+    return matchesSearch && matchesUser;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = filteredPosts.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSavePost = (postId, isSaved) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId ? { ...post, is_saved: isSaved } : post
+      )
+    );
+    
+    if (isSaved) {
+      showSuccess('Post saved to library');
+    } else {
+      showSuccess('Post removed from library');
     }
   };
 
-  const handleFollow = async (userId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showWarning('Sign In Required', 'Please sign in to follow users');
-        return;
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    } else {
+      // Always show first page
+      items.push(
+        <PaginationItem key={1}>
+          <PaginationLink
+            onClick={() => handlePageChange(1)}
+            isActive={currentPage === 1}
+            className="cursor-pointer"
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>
+      );
+
+      // Show ellipsis if current page is far from start
+      if (currentPage > 3) {
+        items.push(<PaginationEllipsis key="start-ellipsis" />);
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(posts.map(post => 
-          post.author.id === userId 
-            ? { ...post, author: { ...post.author, is_following: data.following } }
-            : post
-        ));
-        showSuccess('Success', data.following ? 'User followed!' : 'User unfollowed!');
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
       }
-    } catch (error) {
-      showError('Error', 'Failed to update follow status');
+
+      // Show ellipsis if current page is far from end
+      if (currentPage < totalPages - 2) {
+        items.push(<PaginationEllipsis key="end-ellipsis" />);
+      }
+
+      // Always show last page
+      if (totalPages > 1) {
+        items.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              onClick={() => handlePageChange(totalPages)}
+              isActive={currentPage === totalPages}
+              className="cursor-pointer"
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
     }
-  };
 
-  const handleComment = async (postId, commentData) => {
-    // Comment handling logic similar to PostList
-    showSuccess('Success', 'Comment posted successfully!');
-  };
-
-  const handleSave = async (postId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showWarning('Sign In Required', 'Please sign in to save posts');
-        return;
-      }
-
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/library/save/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ post_id: postId }),
-      });
-
-      if (response.ok) {
-        showSuccess('Success', 'Post saved to your library!');
-      }
-    } catch (error) {
-      showError('Error', 'Failed to save post');
-    }
+    return items;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center space-x-4 mb-8">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="flex items-center space-x-2">
-              <Heart className="w-6 h-6 text-red-500" />
-              <h1 className="text-2xl font-bold text-gray-900">Following Feed</h1>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600 text-lg">Loading your following feed...</p>
             </div>
-          </div>
-          
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-16"></div>
-                  </div>
-                </div>
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -183,131 +288,192 @@ const FollowingPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center space-x-4 mb-8">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="flex items-center space-x-2">
-              <Heart className="w-6 h-6 text-red-500" />
-              <h1 className="text-2xl font-bold text-gray-900">Following Feed</h1>
-            </div>
-          </div>
-          
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Heart className="w-8 h-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Feed</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-center py-16">
+            <Heart className="h-16 w-16 text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Following Feed</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={fetchFollowingPosts}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Try Again
             </button>
           </div>
         </div>
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
-      </div>
-    );
-  }
-
-  if (posts.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center space-x-4 mb-8">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="flex items-center space-x-2">
-              <Heart className="w-6 h-6 text-red-500" />
-              <h1 className="text-2xl font-bold text-gray-900">Following Feed</h1>
-            </div>
-          </div>
-          
-          <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-pink-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-              <Users className="w-10 h-10 text-red-500" />
-            </div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-3">No Posts Yet</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              You haven't followed anyone yet, or the people you follow haven't posted recently.
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/')}
-                className="block mx-auto px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-              >
-                Discover New Creators
-              </button>
-              <p className="text-sm text-gray-500">
-                Browse the home feed to find interesting people to follow
-              </p>
-            </div>
-          </div>
-        </div>
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        <div className="mb-8">
+          {/* Back Button */}
+          <div className="mb-6">
+            <button 
+              onClick={handleBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors group"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium">Back</span>
             </button>
-            <div className="flex items-center space-x-2">
-              <Heart className="w-6 h-6 text-red-500" />
-              <h1 className="text-2xl font-bold text-gray-900">Following Feed</h1>
+          </div>
+          
+          <div className="flex items-center gap-3 mb-6">
+            <Users className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Following Feed</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-gray-600">
+                  {selectedUser 
+                    ? `${filteredPosts.length} ${filteredPosts.length === 1 ? 'post' : 'posts'} from ${selectedUser.username}`
+                    : `${filteredPosts.length} ${filteredPosts.length === 1 ? 'post' : 'posts'} from people you follow`
+                  }
+                </p>
+                {selectedUser && (
+                  <button
+                    onClick={() => {
+                      setSelectedUser(null);
+                      setCurrentPage(1);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium ml-2 underline"
+                  >
+                    Show all
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Sparkles className="w-4 h-4" />
-            <span>{posts.length} posts from people you follow</span>
-          </div>
-        </div>
 
-        {/* Posts Feed */}
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <Post
-                post={post}
-                onLike={handleLike}
-                onFollow={handleFollow}
-                onComment={handleComment}
-                onSave={handleSave}
-                onPostClick={(postId) => navigate(`/post/${postId}`)}
-              />
+          {/* Followed Users */}
+          <div className="mb-8 relative">
+            <div className="flex items-center">
+              {followedUsers.length > 6 && (
+                <button
+                  onClick={() => {
+                    const container = document.getElementById('followed-users-container');
+                    container.scrollLeft -= 200;
+                  }}
+                  className="absolute left-0 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4 text-gray-600" />
+                </button>
+              )}
+              
+              <div 
+                id="followed-users-container"
+                className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-2 mx-8"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                {followedUsers.map((user) => (
+                  <div 
+                    key={user.id} 
+                    className="flex flex-col items-center min-w-0 flex-shrink-0 cursor-pointer"
+                    onClick={() => {
+                      if (selectedUser?.id === user.id) {
+                        setSelectedUser(null); // Deselect if clicking the same user
+                      } else {
+                        setSelectedUser(user); // Select the user
+                      }
+                      setCurrentPage(1); // Reset to first page
+                    }}
+                  >
+                    <Avatar className={`h-16 w-16 border-2 transition-colors ${
+                      selectedUser?.id === user.id 
+                        ? 'border-blue-500 ring-2 ring-blue-200' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <AvatarImage src={user.profile_picture} alt={user.username} />
+                      <AvatarFallback className="text-lg font-medium">
+                        {user.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className={`text-sm mt-2 text-center max-w-[80px] truncate ${
+                      selectedUser?.id === user.id ? 'text-blue-600 font-medium' : 'text-gray-700'
+                    }`}
+                       style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
+                      {user.username}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              
+              {followedUsers.length > 6 && (
+                <button
+                  onClick={() => {
+                    const container = document.getElementById('followed-users-container');
+                    container.scrollLeft += 200;
+                  }}
+                  className="absolute right-0 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4 text-gray-600" />
+                </button>
+              )}
             </div>
-          ))}
+          </div>
+
+
         </div>
 
-        {/* Load More Button (for future pagination) */}
-        <div className="text-center mt-12">
-          <p className="text-gray-500 text-sm">
-            You've seen all recent posts from people you follow
-          </p>
-        </div>
+        {/* Posts */}
+        {currentPosts.length === 0 ? (
+          <div className="text-center py-16">
+            <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {searchTerm ? 'No posts found' : 'No posts in your following feed'}
+            </h3>
+            <p className="text-gray-600">
+              {searchTerm 
+                ? 'Try adjusting your search terms'
+                : 'Follow some users to see their posts here'
+              }
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-6 mb-8">
+              {currentPosts.map((post) => (
+                <Post
+                  key={post.id}
+                  post={post}
+                  onSave={handleSavePost}
+                  onPostClick={handlePostClick}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={`cursor-pointer ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                    </PaginationItem>
+                    
+                    {renderPaginationItems()}
+                    
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={`cursor-pointer ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
+        )}
+
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </div>
-      
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     </div>
   );
 };

@@ -1,32 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, Heart, MessageCircle, Eye, Search } from 'lucide-react';
-import { authenticatedFetch } from '../config/api';
-import API_CONFIG from '../config/api';
+import { useNavigate } from 'react-router-dom';
+import { Bookmark, Search, User, Menu } from 'lucide-react';
+import Post from './Post';
+import { ToastContainer } from './ToastNotification';
+import useToast from '../hooks/useToast';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from './ui/pagination';
+import { Input } from './ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import UserProfilePopover from './UserProfilePopover';
 
 const LibraryPage = () => {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(6);
+  const [postsPerPage] = useState(8);
+  const { toasts, showWarning, showSuccess, removeToast } = useToast();
+  
+
 
   useEffect(() => {
     fetchLibraryPosts();
   }, []);
 
-  // Fetch user's library posts (liked posts - serves as saved posts)
+  // Get auth token from localStorage
+  const getAuthToken = () => {
+    return localStorage.getItem('token');
+  };
+
+  // Fetch user's library posts from backend API
   const fetchLibraryPosts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) {
         setError('Please login to view your library');
         setLoading(false);
         return;
       }
 
+      // Call the backend API to get user's saved posts
       const response = await fetch('http://127.0.0.1:8000/api/posts/users/library/', {
         headers: {
           'Authorization': `Token ${token}`,
@@ -35,17 +59,159 @@ const LibraryPage = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
+        const savedPosts = await response.json();
+        console.log('Fetched saved posts from backend:', savedPosts);
+        
+        // Mark all posts as saved since they come from the library endpoint
+        const postsWithSavedFlag = savedPosts.map(post => ({ ...post, is_saved: true }));
+      
+        // Fetch follow status for each unique author
+        const uniqueAuthorIds = [...new Set(savedPosts.map(post => post.author?.id).filter(Boolean))];
+        const followStatusMap = {};
+        
+        try {
+          // Fetch current user's following list
+          const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+            headers: {
+              'Authorization': `Token ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (followingResponse.ok) {
+            const followingData = await followingResponse.json();
+            const followingIds = followingData.map(user => user.id);
+            
+            // Create follow status map
+            uniqueAuthorIds.forEach(authorId => {
+              followStatusMap[authorId] = followingIds.includes(authorId);
+            });
+          }
+        } catch (followError) {
+          console.error('Error fetching follow status:', followError);
+        }
+        
+        // Add follow status to posts
+        const postsWithFollowStatus = savedPosts.map(post => ({
+          ...post,
+          is_saved: true,
+          author: {
+            ...post.author,
+            is_following: followStatusMap[post.author?.id] || false
+          }
+        }));
+        
+        console.log(`Found ${savedPosts.length} saved posts from backend`);
+        setPosts(postsWithFollowStatus);
       } else {
-        setError('Failed to fetch library posts');
+        console.error('Failed to fetch saved posts:', response.status);
+        setError('Failed to load your library');
+        setPosts([]);
       }
+      
     } catch (error) {
       console.error('Error fetching library:', error);
       setError('Error loading library');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle save/unsave functionality in library
+  const handleSave = async (postId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showWarning('Sign In Required', 'Please sign in to save posts');
+        return;
+      }
+
+      // Call backend API to save/unsave post
+      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/save/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newSavedState = data.saved;
+        
+        if (newSavedState) {
+          // Post was saved - shouldn't happen in library view but handle it
+          showSuccess('Saved', data.message);
+        } else {
+          // Post was unsaved - remove from library view
+          setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+          showSuccess('Removed', data.message);
+        }
+        
+        // Refresh library to ensure consistency
+        fetchLibraryPosts();
+      } else {
+        throw new Error('Failed to save post');
+      }
+      
+    } catch (error) {
+      console.error('Error saving post:', error);
+      showWarning('Error', 'Failed to update post. Please try again.');
+    }
+  };
+
+  // Handle other post interactions
+  const handleLike = async (postId) => {
+    // Placeholder for like functionality
+    showWarning('Info', 'Like functionality coming soon!');
+  };
+
+  const handleFollow = async (userId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showWarning('Warning', 'Please login to follow users');
+        return;
+      }
+
+      // Find the post with this author to get current follow status
+      const postWithAuthor = posts.find(post => post.author?.id === userId);
+      const isCurrentlyFollowing = postWithAuthor?.author?.is_following || false;
+
+      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newFollowStatus = data.following;
+        
+        // Update posts to reflect new follow status
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.author?.id === userId 
+              ? { ...post, author: { ...post.author, is_following: newFollowStatus } }
+              : post
+          )
+        );
+
+        showSuccess('Success', newFollowStatus ? 'User followed successfully!' : 'User unfollowed successfully!');
+      } else {
+        showWarning('Error', 'Failed to update follow status');
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+      showWarning('Error', 'Failed to update follow status');
+    }
+  };
+
+  const handleComment = async (postId, commentText) => {
+    // Placeholder for comment functionality
+    showWarning('Info', 'Comment functionality coming soon!');
   };
 
   // Filter posts based on search term
@@ -68,190 +234,159 @@ const LibraryPage = () => {
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll to top of content
-    document.querySelector('.flex-1.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Get current user for profile display
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => window.history.back()}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center">
-              <BookOpen className="w-6 h-6 text-purple-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">My Library</h1>
+    <div className="bg-white">
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Page Header with Title and Search */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Bookmark className="w-7 h-7 text-gray-900" />
+              <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
             </div>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-8">
-            <div className="relative">
+            
+            {/* Library Search Box */}
+            <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
+              <Input
                 type="text"
-                placeholder="Search your library..."
+                placeholder="Search library..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="pl-10 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-transparent rounded-lg"
               />
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <span className="ml-3 text-gray-600">Loading your library...</span>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load library</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
+        
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-900 mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading your saved posts...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <Bookmark className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Unable to load library</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">{error}</p>
+            <button
+              onClick={fetchLibraryPosts}
+              className="bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : currentPosts.length === 0 ? (
+          <div className="text-center py-20">
+            <Bookmark className="w-20 h-20 text-gray-200 mx-auto mb-6" />
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              {searchTerm ? 'No matching posts found' : 'Your library is empty'}
+            </h3>
+            <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
+              {searchTerm 
+                ? 'Try adjusting your search terms or browse more posts to save.' 
+                : 'Start saving posts you want to read later. They\'ll appear here for easy access.'
+              }
+            </p>
+            {!searchTerm && (
               <button
-                onClick={fetchLibraryPosts}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                onClick={() => navigate('/')}
+                className="mt-6 bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
               >
-                Try Again
+                Explore Posts
               </button>
-            </div>
-          ) : currentPosts.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? 'No matching posts found' : 'Your library is empty'}
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm 
-                  ? 'Try adjusting your search terms' 
-                  : 'Like posts to add them to your library for easy access later'
-                }
-              </p>
-            </div>
-          ) : (
+            )}
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Posts Grid */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <p className="text-gray-600">
-                  {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'} in your library
-                  {totalPages > 1 && (
-                    <span className="ml-2 text-sm">
-                      (Page {currentPage} of {totalPages})
-                    </span>
-                  )}
-                </p>
-              </div>
-              
-              <div className="grid gap-6">
-                {currentPosts.map((post) => (
-                  <article key={post.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            {post.author.avatar ? (
-                              <img src={post.author.avatar} alt={post.author.username} className="w-8 h-8 rounded-full" />
-                            ) : (
-                              <span className="text-purple-600 text-sm font-medium">
-                                {post.author.username.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{post.author.username}</p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(post.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <h3 className="text-xl font-bold text-gray-900 mb-3 hover:text-purple-600 cursor-pointer">
-                          {post.title}
-                        </h3>
-                        
-                        <p className="text-gray-700 mb-4 line-clamp-3">
-                          {post.excerpt || post.content.substring(0, 200) + '...'}
-                        </p>
-                        
-                        <div className="flex items-center text-sm text-gray-500 space-x-6">
-                          <div className="flex items-center">
-                            <Heart className="w-4 h-4 mr-1 text-red-500 fill-current" />
-                            {post.like_count}
-                          </div>
-                          <div className="flex items-center">
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            {post.comment_count}
-                          </div>
-                          <div className="flex items-center">
-                            <Eye className="w-4 h-4 mr-1" />
-                            {post.views}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {post.image && (
-                        <img 
-                          src={post.image} 
-                          alt={post.title}
-                          className="w-24 h-24 object-cover rounded-lg ml-6 flex-shrink-0"
-                        />
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-2 mt-8">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  
-                  {[...Array(totalPages)].map((_, index) => {
-                    const pageNumber = index + 1;
-                    return (
-                      <button
-                        key={pageNumber}
-                        onClick={() => handlePageChange(pageNumber)}
-                        className={`px-3 py-2 text-sm font-medium rounded-md ${
-                          currentPage === pageNumber
-                            ? 'bg-purple-600 text-white'
-                            : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNumber}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+              {currentPosts.map((post) => (
+                <Post
+                  key={post.id}
+                  post={post}
+                  onLike={handleLike}
+                  onFollow={handleFollow}
+                  onComment={handleComment}
+                  onSave={handleSave}
+                  onPostClick={(postId) => navigate(`/post/${postId}`)}
+                />
+              ))}
             </div>
-          )}
-        </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center pt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    
+                    {[...Array(totalPages)].map((_, index) => {
+                      const pageNumber = index + 1;
+                      const isCurrentPage = pageNumber === currentPage;
+                      const showPage = 
+                        pageNumber === 1 ||
+                        pageNumber === totalPages ||
+                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1);
+                      
+                      if (!showPage) {
+                        if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      }
+                      
+                      return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(pageNumber)}
+                            isActive={isCurrentPage}
+                            className="cursor-pointer"
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };

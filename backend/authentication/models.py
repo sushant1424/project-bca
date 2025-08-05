@@ -33,6 +33,10 @@ class User(AbstractUser):
     twitter = models.URLField(blank=True, null=True)
     linkedin = models.URLField(blank=True, null=True)
     
+    # Password reset fields
+    reset_token = models.CharField(max_length=100, blank=True, null=True)
+    reset_token_expires = models.DateTimeField(blank=True, null=True)
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

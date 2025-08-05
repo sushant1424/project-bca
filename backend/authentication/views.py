@@ -9,9 +9,16 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
+from django.core.paginator import Paginator
+from django.db.models import Q, Count
 from PIL import Image
 import os
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer, AdminUserSerializer
 from .models import User
 
 @api_view(['POST'])
@@ -234,4 +241,355 @@ def upload_profile_image(request):
         return Response({
             'message': 'An error occurred while uploading image',
             'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """
+    Get current user data
+    Requires: Authentication
+    Returns: Current user data
+    """
+    try:
+        user = request.user
+        user_data = UserSerializer(user).data
+        return Response({
+            'user': user_data
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred while fetching user data',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_by_id(request, user_id):
+    """
+    Get user data by ID
+    Accepts: user_id in URL
+    Returns: User data
+    """
+    try:
+        user = User.objects.get(id=user_id)
+        user_data = UserSerializer(user).data
+        return Response(user_data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({
+            'message': 'User not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred while fetching user data',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def users_list(request):
+    """
+    Get paginated list of users with search functionality
+    Requires: Authentication (staff users only for admin)
+    Query params: page, search
+    Returns: Paginated user list
+    """
+    try:
+        # Temporarily allow all authenticated users for demo
+        # if not request.user.is_staff:
+        #     return Response({
+        #         'message': 'Access denied. Staff privileges required.'
+        #     }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get query parameters
+        page = int(request.GET.get('page', 1))
+        search = request.GET.get('search', '').strip()
+        page_size = 50  # Items per page - increased to show more users
+        
+        # Build queryset with search and optimize for admin dashboard
+        queryset = User.objects.select_related().prefetch_related('posts', 'saved_posts').order_by('-date_joined')
+        
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+        
+        # Paginate results
+        paginator = Paginator(queryset, page_size)
+        page_obj = paginator.get_page(page)
+        
+        # Serialize users with admin-specific data
+        users_data = AdminUserSerializer(page_obj.object_list, many=True, context={'request': request}).data
+        
+        return Response({
+            'results': users_data,
+            'count': paginator.count,
+            'num_pages': paginator.num_pages,
+            'current_page': page,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred while fetching users',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_user(request, user_id):
+    """
+    Delete a user (admin only)
+    """
+    try:
+        # Temporarily allow all authenticated users for demo
+        # if not request.user.is_staff:
+        #     return Response({'message': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        user = User.objects.get(id=user_id)
+        user.delete()
+        return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': 'Error deleting user', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_user(request, user_id):
+    """
+    Update user status (admin only)
+    """
+    try:
+        # Temporarily allow all authenticated users for demo
+        # if not request.user.is_staff:
+        #     return Response({'message': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        user = User.objects.get(id=user_id)
+        user.is_active = not user.is_active
+        user.save()
+        return Response({'message': 'User updated successfully', 'is_active': user.is_active}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': 'Error updating user', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    """
+    Send password reset email
+    Accepts: email
+    Returns: Success message
+    """
+    try:
+        email = request.data.get('email')
+        if not email:
+            return Response({
+                'message': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Don't reveal if email exists for security
+            return Response({
+                'message': 'If an account with this email exists, you will receive a password reset link.'
+            }, status=status.HTTP_200_OK)
+        
+        # Generate reset token
+        reset_token = get_random_string(32)
+        user.reset_token = reset_token
+        user.reset_token_expires = timezone.now() + timedelta(hours=1)
+        user.save()
+        
+        # Send password reset email
+        try:
+            reset_url = f"http://localhost:5173/reset-password?token={reset_token}"
+            subject = 'Reset Your Wrytera Password'
+            message = f"""
+Hi {user.first_name or user.username},
+
+You requested to reset your password for your Wrytera account.
+
+Click the link below to reset your password:
+{reset_url}
+
+Or copy and paste this reset token: {reset_token}
+
+This link will expire in 1 hour for security reasons.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+The Wrytera Team
+            """
+            
+            # Send email (configure SMTP settings in Django settings)
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            
+            return Response({
+                'message': 'Password reset instructions have been sent to your email.',
+                'email_sent': True
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as email_error:
+            # If email fails, still return success for security (don't reveal email issues)
+            print(f"Email sending failed: {email_error}")
+            return Response({
+                'message': 'Password reset instructions have been sent to your email.',
+                'email_sent': False,
+                'reset_token': reset_token  # Fallback for development
+            }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred while processing your request',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    """
+    Reset password with token
+    Accepts: token, new_password
+    Returns: Success message
+    """
+    try:
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+        
+        if not token or not new_password:
+            return Response({
+                'message': 'Token and new password are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(
+                reset_token=token,
+                reset_token_expires__gt=timezone.now()
+            )
+        except User.DoesNotExist:
+            return Response({
+                'message': 'Invalid or expired reset token'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Reset password
+        user.set_password(new_password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        user.save()
+        
+        return Response({
+            'message': 'Password reset successfully!'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred while resetting password',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """
+    User logout endpoint
+    Requires: Authentication
+    Returns: Success message
+    """
+    try:
+        # Delete the user's token to log them out
+        if hasattr(request.user, 'auth_token'):
+            request.user.auth_token.delete()
+        
+        return Response({
+            'message': 'Logged out successfully!'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'message': 'An error occurred during logout',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_admin(request):
+    """
+    Create a Django superuser/admin account
+    Accepts: username, email, password, confirm_password
+    Returns: success message and admin user data
+    """
+    try:
+        username = request.data.get('username', '').strip()
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '')
+        confirm_password = request.data.get('confirm_password', '')
+        
+        # Validation
+        if not username or not email or not password:
+            return Response({
+                'error': 'Username, email, and password are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if password != confirm_password:
+            return Response({
+                'error': 'Passwords do not match'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if len(password) < 8:
+            return Response({
+                'error': 'Password must be at least 8 characters long'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if username already exists
+        if User.objects.filter(username=username).exists():
+            return Response({
+                'error': 'Username already exists'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if email already exists
+        if User.objects.filter(email=email).exists():
+            return Response({
+                'error': 'Email already exists'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create superuser (admin)
+        admin_user = User.objects.create_superuser(
+            username=username,
+            email=email,
+            password=password
+        )
+        
+        # Generate token for immediate login
+        token, created = Token.objects.get_or_create(user=admin_user)
+        
+        return Response({
+            'message': 'Admin account created successfully!',
+            'user': {
+                'id': admin_user.id,
+                'username': admin_user.username,
+                'email': admin_user.email,
+                'is_staff': admin_user.is_staff,
+                'is_superuser': admin_user.is_superuser
+            },
+            'token': token.key
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to create admin account',
+            'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

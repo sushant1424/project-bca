@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Home, PenTool, BookOpen, Heart, LogOut, BarChart3, Bell } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, PenTool, BookOpen, Users, Bell, TrendingUp, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import LogoutModal from './LogoutModal';
-import Toast from './Toast';
-import FollowingFeed from './FollowingFeed';
+import { useToast } from '../context/ToastContext';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import SidebarToggle from './SidebarToggle';
 
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [followingList, setFollowingList] = useState([]);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  // Toast notification state
-  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  // Use ToastContext for notifications
+  const { showWarning } = useToast();
 
   // Check if user is logged in and fetch following list
   useEffect(() => {
@@ -74,41 +78,25 @@ const Sidebar = () => {
 
 
 
-  // Handle write click with authentication check
+  // Handle write click - let ProtectedRoute handle authentication
   const handleWriteClick = () => {
-    if (!user) {
-      setToast({
-        show: true,
-        message: 'Please sign in to start writing',
-        type: 'warning'
-      });
-      return;
-    }
     if (onWriteClick) onWriteClick();
   };
 
-  // Handle dashboard click with authentication check
+  // Handle dashboard click - let ProtectedRoute handle authentication
   const handleDashboardClick = () => {
-    if (!user) {
-      setToast({
-        show: true,
-        message: 'Please sign in to access your dashboard',
-        type: 'warning'
-      });
-      return;
-    }
     if (onDashboardClick) onDashboardClick();
   };
 
   // Handle library click with authentication check
   const handleLibraryClickAuth = () => {
     if (!user) {
-      setToast({
-        show: true,
-        message: 'Please sign in to access your library',
-        type: 'warning'
-      });
+      showWarning('Please sign in to access your library', 'You need to be logged in to access this page.');
       return;
+    }
+    // Close mobile sidebar when navigating
+    if (onToggleSidebar) {
+      onToggleSidebar();
     }
     handleLibraryClick();
   };
@@ -116,131 +104,110 @@ const Sidebar = () => {
   // Handle favorites click with authentication check
   const handleFavoritesClickAuth = () => {
     if (!user) {
-      setToast({
-        show: true,
-        message: 'Please sign in to access your favorites',
-        type: 'warning'
-      });
+      showWarning('Please sign in to access your favorites', 'You need to be logged in to access this page.');
       return;
     }
     handleFavoritesClick();
   };
 
-  // Close toast notification
-  const closeToast = () => {
-    setToast({ show: false, message: '', type: 'info' });
-  };
+  // Show sidebar toggle on specific pages
+  const showToggle = ['/following', '/library', '/notifications', '/trending'].includes(location.pathname) || location.pathname.startsWith('/post/');
+
   return (
-    <div className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 h-screen sticky top-0">
-      {/* Main Navigation Section */}
-      <div className="flex-1 p-4 overflow-y-auto">
+    <div className={`bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 sticky top-0 relative ${
+      isCollapsed ? 'w-0 overflow-hidden' : 'w-64'
+    }`}>
+      {/* Sidebar Toggle Button */}
+      {showToggle && (
+        <SidebarToggle 
+          isCollapsed={isCollapsed} 
+          onToggle={onToggle}
+        />
+      )}
+        {/* Navigation */}
+        <div className="flex-1 p-4 overflow-y-auto">
         <nav className="space-y-1">
           {/* Primary Navigation Links */}
           <div className="space-y-1">
-            <Link to="/" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
+            <Link to="/" onClick={() => onToggleSidebar && onToggleSidebar()} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
               <Home className="w-5 h-5 mr-3" />
               <span className="font-medium">Home</span>
             </Link>
-            <Link to="/write" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
-              <PenTool className="w-5 h-5 mr-3" />
-              <span className="font-medium">Write</span>
-            </Link>
-            <Link to="/dashboard" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
-              <BarChart3 className="w-5 h-5 mr-3" />
-              <span className="font-medium">Dashboard</span>
-            </Link>
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-gray-200 my-4"></div>
-
-          {/* Following Feed - Creative feed showing posts from followed users */}
-          <FollowingFeed user={user} />
-
-          {/* Divider */}
-          <div className="border-t border-gray-200 my-4"></div>
-
-          {/* Reading List - Show for all users with different content */}
-          <div className="space-y-1">
-            <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              {user ? 'Reading' : 'Popular'}
-            </h3>
             {user ? (
-              // Logged in user - show library and favorites
-              <>
-                <button 
-                  onClick={handleLibraryClickAuth}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left"
-                >
-                  <BookOpen className="w-5 h-5 mr-3" />
-                  <span className="font-medium">My Library</span>
-                </button>
-                <button 
-                  onClick={handleFavoritesClickAuth}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left"
-                >
-                  <Heart className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Favorites</span>
-                </button>
-              </>
+              <Link to="/write" onClick={() => onToggleSidebar && onToggleSidebar()} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
+                <PenTool className="w-5 h-5 mr-3" />
+                <span className="font-medium">Write</span>
+              </Link>
             ) : (
-              // Logged out user - show popular content suggestions
-              <>
-                <div className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 cursor-pointer">
-                  <BookOpen className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Trending Posts</span>
-                </div>
-                <div className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 cursor-pointer">
-                  <Heart className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Most Liked</span>
-                </div>
-              </>
+              <button onClick={() => {
+                showWarning('Please sign in to start writing', 'You need to be logged in to access this page.');
+              }} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left">
+                <PenTool className="w-5 h-5 mr-3" />
+                <span className="font-medium">Write</span>
+              </button>
+            )}
+            {user ? (
+              <Link to="/dashboard" onClick={() => onToggleSidebar && onToggleSidebar()} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
+                <BarChart3 className="w-5 h-5 mr-3" />
+                <span className="font-medium">Dashboard</span>
+              </Link>
+            ) : (
+              <button onClick={() => {
+                showWarning('Please sign in to access your dashboard', 'You need to be logged in to access this page.');
+              }} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left">
+                <BarChart3 className="w-5 h-5 mr-3" />
+                <span className="font-medium">Dashboard</span>
+              </button>
             )}
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-200 my-4"></div>
-
-          {/* Notifications Section */}
+          {/* User-specific sections - only show if user is logged in */}
           {user && (
-            <div className="space-y-1">
-              <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Activity
-              </h3>
-              <button className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left relative">
+            <>
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+
+              {/* Following - Simple link */}
+              <Link to="/following" onClick={() => onToggleSidebar && onToggleSidebar()} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                <Users className="w-5 h-5 mr-3" />
+                <span className="font-medium">Following</span>
+              </Link>
+
+              {/* My Library - Simple and clean */}
+              <button 
+                onClick={handleLibraryClickAuth}
+                className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200 w-full text-left"
+              >
+                <BookOpen className="w-5 h-5 mr-3" />
+                <span className="font-medium">My Library</span>
+              </button>
+
+              {/* Notifications */}
+              <Link to="/notifications" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200 relative">
                 <Bell className="w-5 h-5 mr-3" />
                 <span className="font-medium">Notifications</span>
                 <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">3</span>
-              </button>
-              <button 
-                onClick={handleLogoutClick}
-                className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-red-600 rounded-lg transition-colors duration-200 w-full text-left"
-              >
-                <LogOut className="w-5 h-5 mr-3" />
-                <span className="font-medium">Sign Out</span>
-              </button>
-            </div>
+              </Link>
+            </>
           )}
+
+          {/* Divider before Trending (always show) */}
+          <div className="border-t border-gray-200 my-4"></div>
+
+          {/* Trending Posts */}
+          <Link to="/trending" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200">
+            <TrendingUp className="w-5 h-5 mr-3" />
+            <span className="font-medium">Trending</span>
+          </Link>
+
         </nav>
       </div>
-
-
 
       {/* Logout Confirmation Modal */}
       <LogoutModal 
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleConfirmLogout}
-      />
-
-
-
-      {/* Toast Notification */}
-      <Toast 
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.show}
-        onClose={closeToast}
       />
     </div>
   );

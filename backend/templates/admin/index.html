@@ -1,0 +1,47 @@
+now t{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .dashboard-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        padding: 15px 25px;
+        border-radius: 8px;
+        text-decoration: none !important;
+        display: inline-block;
+        margin: 20px 0;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
+    }
+    
+    .dashboard-link:hover {
+        transform: translateY(-2px);
+        color: white !important;
+    }
+    
+    .dashboard-section {
+        text-align: center;
+        margin: 30px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-section">
+    <h2>🚀 Wrytera Admin Dashboard</h2>
+    <p>Access comprehensive analytics and insights for your platform</p>
+    <a href="{% url 'admin_dashboard' %}" class="dashboard-link">
+        📊 View Analytics Dashboard
+    </a>
+</div>
+
+{{ block.super }}
+{% endblock %}

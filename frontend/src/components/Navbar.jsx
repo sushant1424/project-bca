@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Search, User, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthModal from './AuthModal';
 import LogoutModal from './LogoutModal';
+import UserProfilePopover from './UserProfilePopover';
+import { Button } from './ui/button';
 
-const Navbar = ({ onSearch }) => {
+const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   // State for mobile menu toggle
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,6 +33,11 @@ const Navbar = ({ onSearch }) => {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  // Hide navbar on dashboard and write page (after all hooks are declared)
+  if (location.pathname === '/dashboard' || location.pathname === '/write') {
+    return null;
+  }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -70,7 +78,7 @@ const Navbar = ({ onSearch }) => {
     setAuthMode(newMode);
   };
 
-  // Handle search input change
+  // Handle search input change with debouncing
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -100,47 +108,53 @@ const Navbar = ({ onSearch }) => {
 
   return (
     <>
-      <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo - Left side */}
-            <div className="flex items-center">
-              <span className="text-2xl font-bold text-gray-900">Wrytera</span>
+            {/* Hamburger Menu and Logo - Left side */}
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              {/* Hamburger Menu Button */}
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              
+              {/* Logo */}
+              <button 
+                onClick={() => navigate('/')}
+                className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                Wrytera
+              </button>
             </div>
 
-            {/* Search Bar - Center (hidden on mobile) */}
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
+            {/* Search Bar - Center (hidden on Library, Admin, and Following pages) */}
+            {location.pathname !== '/library' && location.pathname !== '/admin' && location.pathname !== '/following' && (
+              <div className="hidden md:block flex-1 max-w-lg mx-8">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search posts..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onKeyDown={handleSearchSubmit}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm transition-all duration-200"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search posts, authors..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleSearchSubmit}
-                  className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                />
               </div>
-            </div>
+            )}
 
             {/* Action Buttons - Right side (hidden on mobile) */}
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
-                // User is logged in - show greeting and logout
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-700 font-medium">
-                    Hello, {user.username}! 👋
-                  </span>
-                  <button
-                    onClick={handleLogoutClick}
-                    className="px-4 py-2 text-gray-700 hover:text-red-600 transition-colors duration-200 font-medium flex items-center"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </button>
-                </div>
+                // User is logged in - show profile popover
+                <UserProfilePopover user={user} onLogout={handleLogoutClick} />
               ) : (
                 // User is not logged in - show auth buttons
                 <>
@@ -160,16 +174,21 @@ const Navbar = ({ onSearch }) => {
               )}
             </div>
 
-            {/* Mobile menu button (visible only on mobile) */}
-            <div className="md:hidden">
+            {/* Mobile menu button and user profile (visible only on mobile) */}
+            <div className="md:hidden flex items-center space-x-2">
+              {user && (
+                <div className="flex-shrink-0">
+                  <UserProfilePopover user={user} onLogout={handleLogoutClick} />
+                </div>
+              )}
               <button
                 onClick={toggleMenu}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                className="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 flex-shrink-0"
               >
                 {isMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className="w-5 h-5" />
                 )}
               </button>
             </div>

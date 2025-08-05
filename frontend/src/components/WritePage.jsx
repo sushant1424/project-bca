@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Send, Image as ImageIcon, Tag, ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 
 const WritePage = ({ onPostCreated }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { showSuccess } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -16,40 +31,126 @@ const WritePage = ({ onPostCreated }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  // Searchable dropdown state
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [selectedCategoryName, setSelectedCategoryName] = useState('');
 
-  // Check if user is logged in
+  // Check if user is logged in and handle editing
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
     
-    // Check if editing a post
-    const editingPostData = localStorage.getItem('editingPost');
-    if (editingPostData) {
-      const post = JSON.parse(editingPostData);
-      setFormData({
-        title: post.title || '',
-        content: post.content || '',
-        excerpt: post.excerpt || '',
-        image: post.image || '',
-        category: post.category?.id || ''
-      });
-      setIsEditing(true);
-      setEditingPostId(post.id);
-      // Clear the editing data from localStorage
-      localStorage.removeItem('editingPost');
+    // Check for edit parameter in URL
+    const urlParams = new URLSearchParams(location.search);
+    const editPostId = urlParams.get('edit');
+    
+    if (editPostId) {
+      // Fetch the post data for editing
+      fetchPostForEditing(editPostId);
+    } else {
+      // Check if editing a post from localStorage (legacy support)
+      const editingPostData = localStorage.getItem('editingPost');
+      if (editingPostData) {
+        const post = JSON.parse(editingPostData);
+        setFormData({
+          title: post.title || '',
+          content: post.content || '',
+          excerpt: post.excerpt || '',
+          image: post.image || '',
+          category: post.category?.id || ''
+        });
+        setIsEditing(true);
+        setEditingPostId(post.id);
+        // Clear the editing data from localStorage
+        localStorage.removeItem('editingPost');
+      }
     }
-  }, []);
+  }, [location.search]);
+
+  const fetchPostForEditing = async (postId) => {
+    try {
+      setLoadingEdit(true);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const post = await response.json();
+        setFormData({
+          title: post.title || '',
+          content: post.content || '',
+          excerpt: post.excerpt || '',
+          image: post.image || '',
+          category: post.category?.id || ''
+        });
+        setIsEditing(true);
+        setEditingPostId(postId);
+      } else {
+        setError('Failed to load post for editing');
+      }
+    } catch (error) {
+      console.error('Error fetching post for editing:', error);
+      setError('Failed to load post for editing');
+    } finally {
+      setLoadingEdit(false);
+    }
+  };
 
   // Fetch categories when component mounts
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/');
+        console.log('Fetching categories from API...');
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        
+        // Add auth header if token exists
+        if (token) {
+          headers['Authorization'] = `Token ${token}`;
+        }
+        
+        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/?page_size=100', {
+          headers
+        });
+        console.log('Categories API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          setCategories(data);
+          console.log('Categories API response data:', data);
+          
+          // Handle different response formats
+          let categoriesArray = [];
+          if (Array.isArray(data)) {
+            // Direct array response
+            categoriesArray = data;
+          } else if (data.results && Array.isArray(data.results)) {
+            // Paginated response
+            categoriesArray = data.results;
+          } else if (data.data && Array.isArray(data.data)) {
+            // Nested data response
+            categoriesArray = data.data;
+          }
+          
+          console.log('Processed categories array:', categoriesArray);
+          setCategories(categoriesArray);
+        } else {
+          console.error('Categories API failed with status:', response.status);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -72,6 +173,32 @@ const WritePage = ({ onPostCreated }) => {
       [name]: value
     }));
   };
+
+  // Handle category selection
+  const handleCategorySelect = (categoryId, categoryName) => {
+    setFormData(prev => ({
+      ...prev,
+      category: categoryId
+    }));
+    setSelectedCategoryName(categoryName);
+    setShowCategoryDropdown(false);
+    setCategorySearch('');
+  };
+
+  // Filter categories based on search
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  // Update selected category name when editing
+  useEffect(() => {
+    if (formData.category && categories.length > 0) {
+      const selectedCategory = categories.find(cat => cat.id.toString() === formData.category.toString());
+      if (selectedCategory) {
+        setSelectedCategoryName(selectedCategory.name);
+      }
+    }
+  }, [formData.category, categories]);
 
   const handleSubmit = async (isDraft = false) => {
     if (!user) {
@@ -121,9 +248,12 @@ const WritePage = ({ onPostCreated }) => {
           });
         }
         
-        // Show success message
+        // Show success message with professional toast
         const action = isEditing ? 'updated' : (isDraft ? 'saved as draft' : 'published');
-        alert(`Post ${action} successfully!`);
+        showSuccess(
+          `Post ${action} successfully!`,
+          `Your post has been ${action} and is now ${isDraft ? 'saved in drafts' : 'live on your blog'}.`
+        );
         
         // Call onPostCreated if provided
         if (onPostCreated) {
@@ -145,10 +275,23 @@ const WritePage = ({ onPostCreated }) => {
 
   const handleClose = () => {
     if (hasUnsavedChanges) {
-      const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
-      if (!confirmed) return;
+      setPendingNavigation(() => () => window.history.back());
+      setShowUnsavedDialog(true);
+      return;
     }
     window.history.back();
+  };
+
+  const handleConfirmLeave = () => {
+    setShowUnsavedDialog(false);
+    if (pendingNavigation) {
+      pendingNavigation();
+    }
+  };
+
+  const handleCancelLeave = () => {
+    setShowUnsavedDialog(false);
+    setPendingNavigation(null);
   };
 
   // If user is not logged in, show login message
@@ -184,7 +327,7 @@ const WritePage = ({ onPostCreated }) => {
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
             <h1 className="text-3xl font-bold text-gray-900">
-              {isEditing ? 'Edit Post' : 'Write New Post'}
+              {loadingEdit ? 'Loading...' : (isEditing ? 'Edit Post' : 'Write New Post')}
             </h1>
           </div>
           {hasUnsavedChanges && (
@@ -222,6 +365,16 @@ const WritePage = ({ onPostCreated }) => {
               </div>
             )}
 
+            {/* Loading overlay for editing */}
+            {loadingEdit && (
+              <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading post for editing...</p>
+                </div>
+              </div>
+            )}
+
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Title */}
               <div>
@@ -239,26 +392,77 @@ const WritePage = ({ onPostCreated }) => {
               {/* Category and Excerpt Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Category */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
                   </label>
                   <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+                    <input
+                      type="text"
+                      value={showCategoryDropdown ? categorySearch : selectedCategoryName || 'Select a category'}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onFocus={() => setShowCategoryDropdown(true)}
+                      placeholder="Search categories..."
+                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
+                      readOnly={!showCategoryDropdown}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Dropdown */}
+                    {showCategoryDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredCategories.length > 0 ? (
+                          filteredCategories.map((category) => (
+                            <button
+                              key={category.id}
+                              type="button"
+                              onClick={() => handleCategorySelect(category.id, category.name)}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{category.name}</div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            {categories.length === 0 ? (
+                              <div>
+                                <div>No categories loaded</div>
+                                <div className="text-xs mt-1">Total categories: {categories.length}</div>
+                                <div className="text-xs">Check browser console for API errors</div>
+                              </div>
+                            ) : categorySearch ? (
+                              <div>
+                                <div>No categories match "{categorySearch}"</div>
+                                <div className="text-xs mt-1">Available: {categories.length} categories</div>
+                              </div>
+                            ) : (
+                              'Loading categories...'
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Click outside to close dropdown */}
+                  {showCategoryDropdown && (
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => {
+                        setShowCategoryDropdown(false);
+                        setCategorySearch('');
+                      }}
+                    />
+                  )}
                 </div>
 
                 {/* Image URL */}
@@ -357,6 +561,24 @@ const WritePage = ({ onPostCreated }) => {
           </div>
         </div>
       </div>
+
+      {/* Unsaved Changes Alert Dialog */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelLeave}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLeave} className="bg-red-600 hover:bg-red-700">
+              Leave without saving
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

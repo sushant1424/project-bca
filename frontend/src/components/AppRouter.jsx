@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import { AuthProvider } from '../context/AuthContext';
+import ProtectedRoute from './ProtectedRoute';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import CategoriesBar from './CategoriesBar';
@@ -14,12 +15,16 @@ import FavoritesPage from './FavoritesPage';
 import ProfilePage from './ProfilePage';
 import ProfileSettings from './ProfileSettings';
 import FollowingPage from './FollowingPage';
+import UserProfileView from './UserProfileView';
+import AdminPanel from './AdminPanel';
 
-const AppRouter = () => {
+const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -71,30 +76,63 @@ const AppRouter = () => {
   };
 
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <Router>
-        <Routes>
-        {/* Home page with sidebar layout */}
-        <Route path="/" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar onSearch={handleSearch} />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+    <Router>
+      <ErrorBoundary>
+        <AuthProvider>
+          {/* Mobile Sidebar Overlay */}
+          {!sidebarCollapsed && (
+            <div className="lg:hidden fixed inset-0 z-50">
+              {/* Backdrop */}
+              <div 
+                className="absolute inset-0 bg-black bg-opacity-50" 
+                onClick={onToggleSidebar}
+              />
+              {/* Sidebar */}
+              <div className="absolute left-0 top-0 w-64 h-full bg-white shadow-2xl">
+                {/* Header with close button */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+                  <button
+                    onClick={onToggleSidebar}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                    aria-label="Close menu"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Sidebar content */}
+                <div className="overflow-y-auto h-full pb-20">
+                  <Sidebar onToggleSidebar={onToggleSidebar} />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <Routes>
+            {/* Home page with sidebar layout */}
+            <Route path="/" element={
+              <div className="min-h-screen bg-white">
+                <Navbar onSearch={handleSearch} onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+                <div className="flex relative">
+                  {/* Desktop Sidebar */}
+                  <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                    <Sidebar onToggleSidebar={onToggleSidebar} />
+                  </div>
+                  
+                  <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <CategoriesBar 
                   selectedCategory={selectedCategory}
                   onCategorySelect={handleCategorySelect}
                 />
-                <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <PostList 
-                      selectedCategory={selectedCategory}
-                      searchQuery={searchQuery}
-                      searchResults={searchResults}
-                      isSearching={isSearching}
-                    />
-                  </div>
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <PostList 
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    searchResults={searchResults}
+                    isSearching={isSearching}
+                  />
                 </div>
               </main>
             </div>
@@ -103,11 +141,17 @@ const AppRouter = () => {
         
         {/* Individual post page with sidebar */}
         <Route path="/post/:id" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <PostDetail />
               </main>
             </div>
@@ -116,66 +160,114 @@ const AppRouter = () => {
         
         {/* Full-screen pages with navbar but no sidebar */}
         <Route path="/write" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <WritePage />
-          </div>
+          <ProtectedRoute>
+            <div className="min-h-screen bg-white">
+              <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+              <WritePage />
+            </div>
+          </ProtectedRoute>
         } />
         <Route path="/dashboard" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
+          <ProtectedRoute>
             <Dashboard />
-          </div>
+          </ProtectedRoute>
         } />
         <Route path="/library" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <LibraryPage />
               </main>
             </div>
           </div>
         } />
         <Route path="/favorites" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <FavoritesPage />
               </main>
             </div>
           </div>
         } />
         <Route path="/profile" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <ProfilePage />
               </main>
             </div>
           </div>
         } />
         <Route path="/profile/settings" element={
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 w-full min-w-0">
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <ProfileSettings />
               </main>
             </div>
           </div>
         } />
-        <Route path="/following" element={<FollowingPage />} />
+        <Route path="/following" element={
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+              {/* Mobile Sidebar Overlay */}
+              {!sidebarCollapsed && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={onToggleSidebar}>
+                  <div className="bg-white w-64 h-full shadow-lg" onClick={(e) => e.stopPropagation()}>
+                    <Sidebar />
+                  </div>
+                </div>
+              )}
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
+                <FollowingPage />
+              </main>
+            </div>
+          </div>
+        } />
+        <Route path="/user/:userId" element={<UserProfileView />} />
+        <Route path="/admin" element={<AdminPanel />} />
         </Routes>
-        </Router>
-      </AuthProvider>
-    </ErrorBoundary>
+        </AuthProvider>
+      </ErrorBoundary>
+    </Router>
   );
 };
 

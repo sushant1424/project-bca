@@ -52,12 +52,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Logout function with comprehensive state cleanup
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    
+    // Trigger global state cleanup event
+    window.dispatchEvent(new CustomEvent('userLogout'));
+    
+    // Clear any other user-specific data from localStorage
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('user_') || key.includes('cache') || key.includes('state'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
   };
 
   // Update user data

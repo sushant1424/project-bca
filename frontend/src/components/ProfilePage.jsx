@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, Save, Camera, Edit3 } from 'lucide-react';
-import ProfileImage from './ProfileImage';
+import { ArrowLeft, User, Mail, Edit3, Globe, Users, FileText, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
 import { ToastContainer } from './ToastNotification';
-import useToast from '../hooks/useToast';
+import { useToast } from '../context/ToastContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -19,36 +30,61 @@ const ProfilePage = () => {
     new_password: '',
     confirm_password: ''
   });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
   const { toasts, showSuccess, showError, removeToast } = useToast();
 
   useEffect(() => {
-    if (isOpen) {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setFormData({
-          username: userData.username || '',
-          email: userData.email || '',
-          first_name: userData.first_name || '',
-          last_name: userData.last_name || '',
-          bio: userData.bio || '',
-          website: userData.website || '',
-          phone_number: userData.phone_number || '',
-          current_password: '',
-          new_password: '',
-          confirm_password: ''
-        });
-      }
-    };
     fetchUserData();
+    fetchUserPosts();
   }, []);
+
+  const fetchUserData = () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setStats({
+        posts: userData.posts_count || 0,
+        followers: userData.followers_count || 0,
+        following: userData.following_count || 0
+      });
+      // Initialize form data with current user data
+      setFormData({
+        username: userData.username || '',
+        email: userData.email || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        bio: userData.bio || '',
+        website: userData.website || '',
+        phone_number: userData.phone_number || '',
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      });
+    }
+    setLoading(false);
+  };
+
+  const fetchUserPosts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://127.0.0.1:8000/api/posts/users/posts/', {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,18 +118,7 @@ const ProfilePage = () => {
       newErrors.email = 'Please enter a valid email';
     }
 
-    // Password validation (only if changing password)
-    if (formData.new_password) {
-      if (!formData.current_password) {
-        newErrors.current_password = 'Current password is required to change password';
-      }
-      if (formData.new_password.length < 8) {
-        newErrors.new_password = 'New password must be at least 8 characters';
-      }
-      if (formData.new_password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Passwords do not match';
-      }
-    }
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -125,11 +150,7 @@ const ProfilePage = () => {
         phone_number: formData.phone_number
       };
 
-      // Add password fields if changing password
-      if (formData.new_password) {
-        updateData.current_password = formData.current_password;
-        updateData.new_password = formData.new_password;
-      }
+
 
       const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
         method: 'PUT',
@@ -237,13 +258,12 @@ const ProfilePage = () => {
               <div className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-xl p-8 text-white">
                 <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
                   <div className="flex-shrink-0">
-                    <ProfileImage
-                      src={user?.profile_image}
-                      alt={user?.username || 'Profile'}
-                      size="2xl"
-                      editable={false}
-                      className="ring-4 ring-white ring-opacity-30"
-                    />
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user?.profile_image} alt={user?.username || 'Profile'} />
+                      <AvatarFallback className="bg-white text-purple-600 text-2xl font-bold">
+                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                   <div className="text-center md:text-left">
                     <h2 className="text-3xl font-bold mb-2">{user?.username || 'Username'}</h2>
@@ -311,13 +331,12 @@ const ProfilePage = () => {
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
                 <div className="flex flex-col items-center space-y-4">
-                  <ProfileImage
-                    src={user?.profile_image}
-                    alt={user?.username || 'Profile'}
-                    size="2xl"
-                    editable={true}
-                    onImageChange={handleImageChange}
-                  />
+                  <Avatar className="h-24 w-24 cursor-pointer">
+                    <AvatarImage src={user?.profile_image} alt={user?.username || 'Profile'} />
+                    <AvatarFallback className="bg-purple-100 text-purple-600 text-2xl font-bold">
+                      {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <p className="text-sm text-gray-600 text-center">
                     Click on your profile picture to upload a new image<br/>
                     <span className="text-xs text-gray-500">Supported formats: JPG, PNG, WebP (Max 5MB)</span>

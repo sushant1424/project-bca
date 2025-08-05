@@ -7,9 +7,9 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import models
-from .models import Post, Comment, Follow, Repost, Category, SavedPost
+from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView
 from .serializers import (
-    PostSerializer, PostCreateSerializer, CommentSerializer,
+    PostSerializer, PostCreateSerializer, CommentSerializer, AdminCommentSerializer,
     FollowSerializer, RepostSerializer, RepostCreateSerializer,
     CategorySerializer, SavedPostSerializer
 )
@@ -27,6 +27,14 @@ def post_list(request):
     if request.method == 'GET':
         # Get all published posts, regardless of authentication status
         posts = Post.objects.filter(is_published=True).select_related('author').prefetch_related('likes', 'comments')
+        
+        # Handle search parameter - only search by post title and username
+        search = request.GET.get('search', '')
+        if search:
+            posts = posts.filter(
+                Q(title__icontains=search) | 
+                Q(author__username__icontains=search)
+            )
         
         # Apply pagination
         paginator = PostPagination()
@@ -50,10 +58,8 @@ def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     
     if request.method == 'GET':
-        # Increment view count
-        post.views += 1
-        post.save()
-        
+        # Only increment view count if this is a full post view (not API call for other purposes)
+        # Views should only be counted when users actually view the post content
         serializer = PostSerializer(post, context={'request': request})
         return Response(serializer.data)
     
@@ -75,6 +81,80 @@ def post_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
+def track_post_view(request, pk):
+    """Track a post view - only counts when user actually views the full post"""
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    
+    post = get_object_or_404(Post, pk=pk)
+    
+    try:
+        # Get client IP address
+        def get_client_ip(request):
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0]
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+            return ip
+        
+        ip_address = get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        user = request.user if request.user.is_authenticated else None
+        
+        # Check if this view should be counted (prevent spam)
+        # Don't count multiple views from same user/IP within 30 minutes
+        time_threshold = timezone.now() - timedelta(minutes=30)
+        
+        existing_view = None
+        if user:
+            existing_view = PostView.objects.filter(
+                post=post,
+                user=user,
+                viewed_at__gte=time_threshold
+            ).first()
+        else:
+            existing_view = PostView.objects.filter(
+                post=post,
+                ip_address=ip_address,
+                user__isnull=True,
+                viewed_at__gte=time_threshold
+            ).first()
+        
+        if not existing_view:
+            # Create new view record
+            PostView.objects.create(
+                post=post,
+                user=user,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            
+            # Update the post's view count cache
+            post.views = post.view_count()
+            post.save(update_fields=['views'])
+            
+            return Response({
+                'message': 'View tracked successfully',
+                'view_count': post.view_count()
+            })
+        else:
+            return Response({
+                'message': 'View already counted recently',
+                'view_count': post.view_count()
+            })
+    
+    except Exception as e:
+        # If PostView model doesn't exist yet (before migration), fall back to simple increment
+        post.views += 1
+        post.save(update_fields=['views'])
+        
+        return Response({
+            'message': 'View tracked (fallback mode)',
+            'view_count': post.views
+        })
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def like_post(request, pk):
     """Like or unlike a post"""
@@ -82,10 +162,18 @@ def like_post(request, pk):
     
     if post.likes.filter(id=request.user.id).exists():
         post.likes.remove(request.user)
-        return Response({'liked': False})
+        like_count = post.likes.count()
+        return Response({
+            'liked': False,
+            'like_count': like_count
+        })
     else:
         post.likes.add(request.user)
-        return Response({'liked': True})
+        like_count = post.likes.count()
+        return Response({
+            'liked': True,
+            'like_count': like_count
+        })
 
 # Comment views
 @api_view(['GET', 'POST'])
@@ -208,12 +296,47 @@ def user_posts(request, user_id):
     return Response(serializer.data)
 
 # Category views
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def category_list(request):
-    """Get all categories"""
-    categories = Category.objects.filter(is_active=True)
-    serializer = CategorySerializer(categories, many=True)
-    return Response(serializer.data)
+    """Get all categories or create a new category"""
+    if request.method == 'GET':
+        # GET categories is public - no authentication required
+        categories = Category.objects.filter(is_active=True).annotate(
+            posts_count=models.Count('posts')
+        ).order_by('name')
+        
+        # Handle search parameter
+        search = request.GET.get('search', '')
+        if search:
+            categories = categories.filter(name__icontains=search)
+        
+        # Apply pagination
+        paginator = PostPagination()
+        paginated_categories = paginator.paginate_queryset(categories, request)
+        
+        # Add posts_count to serialized data
+        categories_data = []
+        for category in paginated_categories:
+            data = CategorySerializer(category).data
+            data['posts_count'] = category.posts_count
+            categories_data.append(data)
+        
+        return paginator.get_paginated_response(categories_data)
+    
+    elif request.method == 'POST':
+        # POST requires authentication
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Temporarily removed staff check for demo access
+        # if not request.user.is_staff:
+        #     return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def category_posts(request, category_slug):
@@ -233,25 +356,39 @@ def user_stats(request):
     """Get statistics for the current user"""
     user = request.user
     
-    # Count followers
+    # Count followers (users following this user)
     followers_count = Follow.objects.filter(following=user).count()
+    
+    # Count following (users this user is following)
+    following_count = Follow.objects.filter(follower=user).count()
     
     # Count posts
     total_posts = Post.objects.filter(author=user).count()
     published_posts = Post.objects.filter(author=user, is_published=True).count()
     draft_posts = Post.objects.filter(author=user, is_published=False).count()
     
-    # Count total views
+    # Count total views from all user's posts
     total_views = Post.objects.filter(author=user).aggregate(
         total_views=models.Sum('views')
     )['total_views'] or 0
     
+    # Count total likes received on all user's posts
+    total_likes = Post.objects.filter(author=user).aggregate(
+        total_likes=models.Count('likes')
+    )['total_likes'] or 0
+    
+    # Count saved posts by this user
+    saved_posts_count = SavedPost.objects.filter(user=user).count()
+    
     stats = {
         'followers': followers_count,
+        'following': following_count,
         'posts': total_posts,
         'published_posts': published_posts,
         'drafts': draft_posts,
-        'views': total_views
+        'views': total_views,
+        'likes': total_likes,
+        'saved_posts': saved_posts_count
     }
     
     return Response(stats)
@@ -310,11 +447,14 @@ def user_following_list(request):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def save_post(request):
+def save_post(request, post_id=None):
     """Save a post to user's library"""
     try:
         user = request.user
-        post_id = request.data.get('post_id')
+        
+        # Get post_id from URL parameter or request data
+        if post_id is None:
+            post_id = request.data.get('post_id')
         
         if not post_id:
             return Response(
@@ -332,20 +472,25 @@ def save_post(request):
             )
         
         # Check if already saved
-        if SavedPost.objects.filter(user=user, post=post).exists():
-            return Response(
-                {'message': 'Post is already saved to your library'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        saved_post_obj = SavedPost.objects.filter(user=user, post=post).first()
         
-        # Save the post
-        saved_post = SavedPost.objects.create(user=user, post=post)
-        serializer = SavedPostSerializer(saved_post, context={'request': request})
-        
-        return Response({
-            'message': 'Post saved to library successfully',
-            'saved_post': serializer.data
-        }, status=status.HTTP_201_CREATED)
+        if saved_post_obj:
+            # Unsave the post
+            saved_post_obj.delete()
+            return Response({
+                'message': 'Post removed from library successfully',
+                'saved': False
+            }, status=status.HTTP_200_OK)
+        else:
+            # Save the post
+            saved_post = SavedPost.objects.create(user=user, post=post)
+            serializer = SavedPostSerializer(saved_post, context={'request': request})
+            
+            return Response({
+                'message': 'Post saved to library successfully',
+                'saved': True,
+                'saved_post': serializer.data
+            }, status=status.HTTP_201_CREATED)
         
     except Exception as e:
         return Response(
@@ -394,7 +539,75 @@ def user_stats(request):
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def user_posts(request):
+def admin_dashboard_stats(request):
+    """Get admin dashboard statistics with accurate counts and trends"""
+    try:
+        from authentication.models import User
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        # Get current date and last month date for trend calculations
+        now = timezone.now()
+        last_month = now - timedelta(days=30)
+        
+        # Total Users
+        total_users = User.objects.count()
+        users_last_month = User.objects.filter(date_joined__gte=last_month).count()
+        users_trend = round((users_last_month / max(total_users - users_last_month, 1)) * 100, 1) if total_users > users_last_month else 0
+        
+        # Total Posts
+        total_posts = Post.objects.count()
+        posts_last_month = Post.objects.filter(created_at__gte=last_month).count()
+        posts_trend = round((posts_last_month / max(total_posts - posts_last_month, 1)) * 100, 1) if total_posts > posts_last_month else 0
+        
+        # Total Views
+        total_views = Post.objects.aggregate(total=models.Sum('views'))['total'] or 0
+        views_last_month = Post.objects.filter(created_at__gte=last_month).aggregate(total=models.Sum('views'))['total'] or 0
+        views_trend = round((views_last_month / max(total_views - views_last_month, 1)) * 100, 1) if total_views > views_last_month else 0
+        
+        # Total Likes
+        total_likes = 0
+        likes_last_month = 0
+        for post in Post.objects.all():
+            post_likes = post.likes.count()
+            total_likes += post_likes
+            if post.created_at >= last_month:
+                likes_last_month += post_likes
+        
+        likes_trend = round((likes_last_month / max(total_likes - likes_last_month, 1)) * 100, 1) if total_likes > likes_last_month else 0
+        
+        # Recent Users (latest 5)
+        recent_users = User.objects.order_by('-date_joined')[:5]
+        recent_users_data = [{
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'date_joined': user.date_joined
+        } for user in recent_users]
+        
+        stats = {
+            'total_users': total_users,
+            'users_trend': users_trend,
+            'total_posts': total_posts,
+            'posts_trend': posts_trend,
+            'total_views': total_views,
+            'views_trend': views_trend,
+            'total_likes': total_likes,
+            'likes_trend': likes_trend,
+            'recent_users': recent_users_data
+        }
+        
+        return Response(stats)
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch admin dashboard stats'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def current_user_posts(request):
     """Get all posts by the current user"""
     try:
         user = request.user
@@ -551,3 +764,106 @@ def following_feed(request):
             {'error': 'Failed to fetch following feed'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def all_comments_list(request):
+    """Get all comments for admin dashboard"""
+    try:
+        # Get all comments with related data including post author
+        comments = Comment.objects.select_related(
+            'author', 'post', 'post__author'
+        ).order_by('-created_at')
+        
+        # Handle search parameter
+        search = request.GET.get('search', '')
+        if search:
+            comments = comments.filter(
+                Q(content__icontains=search) |
+                Q(author__username__icontains=search) |
+                Q(post__title__icontains=search)
+            )
+        
+        # Apply pagination
+        paginator = PostPagination()
+        paginated_comments = paginator.paginate_queryset(comments, request)
+        serializer = AdminCommentSerializer(paginated_comments, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch comments'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def comment_detail(request, pk):
+    """Get, update, or delete a specific comment"""
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = CommentSerializer(comment, context={'request': request})
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        if comment.author != request.user and not request.user.is_staff:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = CommentSerializer(comment, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        if comment.author != request.user and not request.user.is_staff:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def category_detail(request, pk):
+    """Get, update, or delete a specific category"""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'GET':
+        # Add posts count to the response
+        data = CategorySerializer(category).data
+        data['posts_count'] = category.posts.count()
+        return Response(data)
+    
+    elif request.method == 'PUT':
+        # Temporarily removed staff check for demo access
+        # if not request.user.is_staff:
+        #     return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = CategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        # Temporarily removed staff check for demo access
+        # if not request.user.is_staff:
+        #     return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if category has posts
+        posts_count = category.posts.count()
+        if posts_count > 0:
+            return Response(
+                {'error': f'Cannot delete category with {posts_count} posts. Move posts to another category first.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

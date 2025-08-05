@@ -5,14 +5,34 @@ from .models import Category, Post, Comment, Follow, Repost
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """
-    Admin interface for Category model
+    Enhanced admin interface for Category model with comprehensive features
     """
-    list_display = ('name', 'slug', 'color', 'is_active', 'created_at')
+    list_display = ('name', 'slug', 'color', 'post_count', 'is_active', 'created_at')
     list_filter = ('is_active', 'created_at')
     search_fields = ('name', 'slug', 'description')
     prepopulated_fields = {'slug': ('name',)}
     list_editable = ('is_active', 'color')
     ordering = ('name',)
+    list_per_page = 25
+    actions = ['activate_categories', 'deactivate_categories']
+    
+    def post_count(self, obj):
+        """Display number of posts in this category"""
+        return obj.post_set.count()
+    post_count.short_description = 'Posts'
+    post_count.admin_order_field = 'post_count'
+    
+    def activate_categories(self, request, queryset):
+        """Bulk action to activate categories"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} categories were successfully activated.')
+    activate_categories.short_description = "Activate selected categories"
+    
+    def deactivate_categories(self, request, queryset):
+        """Bulk action to deactivate categories"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} categories were successfully deactivated.')
+    deactivate_categories.short_description = "Deactivate selected categories"
     
     fieldsets = (
         (None, {
@@ -32,14 +52,34 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     """
-    Admin interface for Post model
+    Enhanced admin interface for Post model with comprehensive features
     """
     list_display = ('title', 'author', 'category', 'is_published', 'views', 'like_count', 'comment_count', 'created_at')
-    list_filter = ('is_published', 'category', 'created_at', 'updated_at')
-    search_fields = ('title', 'content', 'author__username', 'author__email')
+    list_filter = ('is_published', 'category', 'created_at', 'updated_at', 'author')
+    search_fields = ('title', 'content', 'excerpt', 'author__username', 'author__email')
     list_editable = ('is_published', 'category')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
+    list_per_page = 20
+    actions = ['make_published', 'make_unpublished', 'reset_views']
+    
+    def make_published(self, request, queryset):
+        """Bulk action to publish posts"""
+        updated = queryset.update(is_published=True)
+        self.message_user(request, f'{updated} posts were successfully published.')
+    make_published.short_description = "Mark selected posts as published"
+    
+    def make_unpublished(self, request, queryset):
+        """Bulk action to unpublish posts"""
+        updated = queryset.update(is_published=False)
+        self.message_user(request, f'{updated} posts were successfully unpublished.')
+    make_unpublished.short_description = "Mark selected posts as unpublished"
+    
+    def reset_views(self, request, queryset):
+        """Bulk action to reset view counts"""
+        updated = queryset.update(views=0)
+        self.message_user(request, f'View counts reset for {updated} posts.')
+    reset_views.short_description = "Reset view counts to 0"
     
     fieldsets = (
         (None, {
@@ -76,13 +116,23 @@ class PostAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """
-    Admin interface for Comment model
+    Enhanced admin interface for Comment model with comprehensive features
     """
     list_display = ('get_short_content', 'author', 'post', 'parent', 'like_count', 'created_at')
-    list_filter = ('created_at', 'updated_at')
+    list_filter = ('created_at', 'updated_at', 'author', 'post')
     search_fields = ('content', 'author__username', 'post__title')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
+    list_per_page = 30
+    raw_id_fields = ('parent', 'post')
+    actions = ['delete_selected_comments']
+    
+    def delete_selected_comments(self, request, queryset):
+        """Bulk action to delete comments"""
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, f'{count} comments were successfully deleted.')
+    delete_selected_comments.short_description = "Delete selected comments"
     
     fieldsets = (
         (None, {

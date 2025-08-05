@@ -134,8 +134,8 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio', 'avatar', 'profile_image', 'profile_image_url', 'created_at']
-        read_only_fields = ['id', 'created_at', 'profile_image_url']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio', 'avatar', 'profile_image', 'profile_image_url', 'created_at', 'is_staff', 'is_superuser', 'is_active']
+        read_only_fields = ['id', 'created_at', 'profile_image_url', 'is_staff', 'is_superuser']
     
     def get_profile_image_url(self, obj):
         """Return the full URL for the profile image"""
@@ -145,3 +145,47 @@ class UserSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.profile_image.url)
             return obj.profile_image.url
         return None
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """
+    Enhanced serializer for admin dashboard with calculated fields
+    """
+    profile_image_url = serializers.SerializerMethodField()
+    posts_count = serializers.SerializerMethodField()
+    saved_posts_count = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
+            'bio', 'avatar', 'profile_image', 'profile_image_url', 
+            'date_joined', 'created_at', 'is_staff', 'is_superuser', 'is_active',
+            'posts_count', 'saved_posts_count'
+        ]
+        read_only_fields = [
+            'id', 'date_joined', 'created_at', 'profile_image_url', 
+            'is_staff', 'is_superuser', 'posts_count', 'saved_posts_count'
+        ]
+    
+    def get_profile_image_url(self, obj):
+        """Return the full URL for the profile image"""
+        if obj.profile_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_image.url)
+            return obj.profile_image.url
+        return None
+    
+    def get_posts_count(self, obj):
+        """Return the number of posts by this user"""
+        return obj.posts.count()
+    
+    def get_saved_posts_count(self, obj):
+        """Return the number of posts saved by this user"""
+        return obj.saved_posts.count()
+    
+    def get_full_name(self, obj):
+        """Return the user's full name or username if no name available"""
+        return obj.get_full_name()
