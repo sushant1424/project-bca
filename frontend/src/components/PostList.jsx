@@ -4,6 +4,7 @@ import Post from './Post';
 import { useLike } from '../contexts/LikeContext';
 import { useToast } from '../context/ToastContext';
 import { Loader2 } from 'lucide-react';
+
 import {
   Pagination,
   PaginationContent,
@@ -456,6 +457,8 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
 
   return (
     <div>
+
+      
       {/* Search Status */}
       {isDisplayingSearchResults && (
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">

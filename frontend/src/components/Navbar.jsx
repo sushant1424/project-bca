@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AuthModal from './AuthModal';
 import LogoutModal from './LogoutModal';
 import UserProfilePopover from './UserProfilePopover';
+import NotificationDropdown from './NotificationDropdown';
 import { Button } from './ui/button';
 
 const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
@@ -131,8 +132,8 @@ const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
               </button>
             </div>
 
-            {/* Search Bar - Center (hidden on Library, Admin, and Following pages) */}
-            {location.pathname !== '/library' && location.pathname !== '/admin' && location.pathname !== '/following' && (
+            {/* Search Bar - Center (hidden on Library, Admin, Following, and Trending pages) */}
+            {location.pathname !== '/library' && location.pathname !== '/admin' && location.pathname !== '/following' && location.pathname !== '/trending' && (
               <div className="hidden md:block flex-1 max-w-lg mx-8">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -153,8 +154,11 @@ const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
             {/* Action Buttons - Right side (hidden on mobile) */}
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
-                // User is logged in - show profile popover
-                <UserProfilePopover user={user} onLogout={handleLogoutClick} />
+                // User is logged in - show notifications and profile popover
+                <>
+                  <NotificationDropdown />
+                  <UserProfilePopover user={user} onLogout={handleLogoutClick} />
+                </>
               ) : (
                 // User is not logged in - show auth buttons
                 <>

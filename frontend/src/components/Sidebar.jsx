@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, PenTool, BookOpen, Users, Bell, TrendingUp, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { Home, PenTool, BookOpen, Users, Bell, TrendingUp, ChevronLeft, ChevronRight, BarChart3, Sparkles } from 'lucide-react';
 import LogoutModal from './LogoutModal';
 import { useToast } from '../context/ToastContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -182,17 +182,27 @@ const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
                 <span className="font-medium">My Library</span>
               </button>
 
-              {/* Notifications */}
-              <Link to="/notifications" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200 relative">
-                <Bell className="w-5 h-5 mr-3" />
-                <span className="font-medium">Notifications</span>
-                <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">3</span>
-              </Link>
+
             </>
           )}
 
           {/* Divider before Trending (always show) */}
           <div className="border-t border-gray-200 my-4"></div>
+
+          {/* Recommendations */}
+          {user ? (
+            <Link to="/recommendations" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200">
+              <Sparkles className="w-5 h-5 mr-3" />
+              <span className="font-medium">Recommendations</span>
+            </Link>
+          ) : (
+            <button onClick={() => {
+              showWarning('Please sign in to view recommendations', 'You need to be logged in to get personalized recommendations.');
+            }} className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-purple-600 rounded-lg transition-colors duration-200 w-full text-left">
+              <Sparkles className="w-5 h-5 mr-3" />
+              <span className="font-medium">Recommendations</span>
+            </button>
+          )}
 
           {/* Trending Posts */}
           <Link to="/trending" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors duration-200">

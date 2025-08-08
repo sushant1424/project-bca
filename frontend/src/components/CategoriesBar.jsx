@@ -23,16 +23,20 @@ const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
           headers['Authorization'] = `Token ${token}`;
         }
         
-        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/', {
+        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/?page_size=100', {
           headers: headers
         });
         
+        console.log('Categories API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          console.log('Categories API response:', data);
+          console.log('Categories API full response:', data);
+          console.log('Categories count:', data.results ? data.results.length : (Array.isArray(data) ? data.length : 'Not array'));
           
           // Handle paginated response format
           const categoriesArray = data.results || data || [];
+          console.log('Categories array:', categoriesArray);
           
           // Ensure categoriesArray is an array
           if (Array.isArray(categoriesArray)) {
@@ -44,15 +48,18 @@ const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
                 active: selectedCategory === cat.slug
               }))
             ];
+            console.log('Final categories to display:', allCategories);
             setCategories(allCategories);
           } else {
             console.error('Categories data is not an array:', categoriesArray);
+            console.error('Data type:', typeof categoriesArray);
             setCategories([
               { id: 0, name: 'All', slug: 'all', color: '#6B7280', active: !selectedCategory }
             ]);
           }
         } else {
-          console.log('Categories API returned:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('Categories API error:', response.status, response.statusText, errorText);
           // Set fallback categories if API fails
           setCategories([
             { id: 0, name: 'All', slug: 'all', color: '#6B7280', active: !selectedCategory }
@@ -92,18 +99,37 @@ const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
   // Check scroll position for arrow visibility
   useEffect(() => {
     const container = document.getElementById('categories-container');
-    if (container) {
+    if (container && categories.length > 0) {
       const checkScroll = () => {
-        setShowLeftArrow(container.scrollLeft > 0);
-        setShowRightArrow(
-          container.scrollLeft < container.scrollWidth - container.clientWidth
-        );
+        const { scrollLeft, scrollWidth, clientWidth } = container;
+        const hasOverflow = scrollWidth > clientWidth;
+        
+        if (hasOverflow) {
+          setShowLeftArrow(scrollLeft > 10);
+          setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+        } else {
+          setShowLeftArrow(false);
+          setShowRightArrow(false);
+        }
       };
 
+      // Add event listeners
       container.addEventListener('scroll', checkScroll);
-      checkScroll();
+      window.addEventListener('resize', checkScroll);
+      
+      // Initial check with delay to ensure DOM is ready
+      setTimeout(() => {
+        checkScroll();
+        // Force right arrow to show if there's overflow
+        if (container.scrollWidth > container.clientWidth) {
+          setShowRightArrow(true);
+        }
+      }, 200);
 
-      return () => container.removeEventListener('scroll', checkScroll);
+      return () => {
+        container.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
     }
   }, [categories]);
 

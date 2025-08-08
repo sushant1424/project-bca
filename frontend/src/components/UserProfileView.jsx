@@ -20,6 +20,7 @@ const UserProfileView = () => {
 
   const fetchUserProfile = async () => {
     try {
+      
       const token = localStorage.getItem('token');
       const headers = {
         'Content-Type': 'application/json',

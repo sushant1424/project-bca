@@ -5,6 +5,7 @@ import { ToastProvider, useToast } from "./context/ToastContext";
 import { LikeProvider } from './contexts/LikeContext';
 import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import { FollowProvider } from './contexts/FollowContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // App Content Component that uses toast context
 function AppContent() {
@@ -49,11 +50,11 @@ export default function App() {
   return (
     <ToastProvider>
       <AnalyticsProvider>
-        <LikeProvider>
-          <FollowProvider>
+        <FollowProvider>
+          <LikeProvider>
             <AppContent />
-          </FollowProvider>
-        </LikeProvider>
+          </LikeProvider>
+        </FollowProvider>
       </AnalyticsProvider>
     </ToastProvider>
   );

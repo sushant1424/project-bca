@@ -5,8 +5,7 @@ import { AuthProvider } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import CategoriesBar from './CategoriesBar';
-import PostList from './PostList';
+import HomePage from './HomePage';
 import PostDetail from './PostDetail';
 import WritePage from './WritePage';
 import Dashboard from './Dashboard';
@@ -17,6 +16,10 @@ import ProfileSettings from './ProfileSettings';
 import FollowingPage from './FollowingPage';
 import UserProfileView from './UserProfileView';
 import AdminPanel from './AdminPanel';
+import TrendingPage from './TrendingPage';
+import NotificationsPage from './NotificationsPage';
+import RecommendationsPage from './RecommendationsPage';
+import { NotificationProvider } from '../contexts/NotificationContext';
 
 const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -79,7 +82,8 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
     <Router>
       <ErrorBoundary>
         <AuthProvider>
-          {/* Mobile Sidebar Overlay */}
+          <NotificationProvider>
+            {/* Mobile Sidebar Overlay */}
           {!sidebarCollapsed && (
             <div className="lg:hidden fixed inset-0 z-50">
               {/* Backdrop */}
@@ -122,22 +126,17 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
                   </div>
                   
                   <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
-                <CategoriesBar 
-                  selectedCategory={selectedCategory}
-                  onCategorySelect={handleCategorySelect}
-                />
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <PostList 
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    searchResults={searchResults}
-                    isSearching={isSearching}
-                  />
+                    <HomePage 
+                      selectedCategory={selectedCategory}
+                      onCategorySelect={handleCategorySelect}
+                      searchQuery={searchQuery}
+                      searchResults={searchResults}
+                      isSearching={isSearching}
+                    />
+                  </main>
                 </div>
-              </main>
-            </div>
-          </div>
-        } />
+              </div>
+            } />
         
         {/* Individual post page with sidebar */}
         <Route path="/post/:id" element={
@@ -262,13 +261,59 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
             </div>
           </div>
         } />
+        <Route path="/trending" element={
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
+                <TrendingPage />
+              </main>
+            </div>
+          </div>
+        } />
+        <Route path="/notifications" element={
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
+                <NotificationsPage />
+              </main>
+            </div>
+          </div>
+        } />
+        <Route path="/recommendations" element={
+          <div className="min-h-screen bg-white">
+            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
+            <div className="flex relative">
+              {/* Desktop Sidebar */}
+              <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <Sidebar />
+              </div>
+              
+              <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
+                <RecommendationsPage />
+              </main>
+            </div>
+          </div>
+        } />
         <Route path="/user/:userId" element={<UserProfileView />} />
         <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-        </AuthProvider>
-      </ErrorBoundary>
-    </Router>
-  );
+      </Routes>
+      </NotificationProvider>
+    </AuthProvider>
+  </ErrorBoundary>
+</Router>
+);
 };
 
 export default AppRouter;
