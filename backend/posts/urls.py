@@ -54,4 +54,17 @@ urlpatterns = [
     path('categories/', views.category_list, name='category_list'),
     path('categories/<int:pk>/', views.category_detail, name='category_detail'),
     path('categories/<slug:category_slug>/', views.category_posts, name='category_posts'),
+    
+    # Notification URLs
+    path('notifications/', views.notifications_list, name='notifications_list'),
+    path('notifications/count/', views.notifications_count, name='notifications_count'),
+    path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('notifications/<int:pk>/read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/<int:pk>/delete/', views.delete_notification, name='delete_notification'),
+    
+    # Algorithmic Recommendation URLs
+    path('recommendations/posts/', views.recommended_posts, name='recommended_posts'),
+    path('recommendations/users/', views.recommended_users, name='recommended_users'),
+    path('trending-topics/', views.trending_topics, name='trending_topics'),
+    path('users/', views.all_users, name='all_users'),
 ] 

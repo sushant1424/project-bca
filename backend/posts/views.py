@@ -7,11 +7,11 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import models
-from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView
+from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView, Notification
 from .serializers import (
     PostSerializer, PostCreateSerializer, CommentSerializer, AdminCommentSerializer,
     FollowSerializer, RepostSerializer, RepostCreateSerializer,
-    CategorySerializer, SavedPostSerializer
+    CategorySerializer, SavedPostSerializer, NotificationSerializer
 )
 
 # Custom pagination class
@@ -649,28 +649,42 @@ def current_user_posts(request):
 
 @api_view(['GET'])
 def trending_posts(request):
-    """Get trending posts (most liked posts in the last 7 days)"""
+    """Get trending posts using Time Delay Weighted Engagement Algorithm"""
     try:
         from datetime import datetime, timedelta
         
-        # Get posts from the last 7 days
-        week_ago = datetime.now() - timedelta(days=7)
+        # Get all published posts from the last 30 days (wider range for algorithm)
+        month_ago = datetime.now() - timedelta(days=30)
         
-        # Get posts ordered by like count (trending)
-        trending_posts = Post.objects.filter(
+        # Get posts with related data for efficiency
+        posts = Post.objects.filter(
             is_published=True,
-            created_at__gte=week_ago
-        ).annotate(
-            like_count=models.Count('likes')
-        ).order_by('-like_count', '-created_at')[:10]
+            created_at__gte=month_ago
+        ).select_related('author', 'category').prefetch_related('likes', 'comments')
         
-        posts_data = []
-        for post in trending_posts:
-            # Get like count
-            like_count = post.likes.count()
+        # Calculate trending scores for all posts
+        posts_with_scores = []
+        for post in posts:
+            # Calculate trending score using our algorithm
+            score = post.trending_score(decay_hours=24, lambda_decay=0.1)
             
-            # Get comment count
-            comment_count = Comment.objects.filter(post=post).count()
+            # Only include posts with engagement (score > 0)
+            if score > 0:
+                posts_with_scores.append({
+                    'post': post,
+                    'trending_score': score
+                })
+        
+        # Sort by trending score (highest first)
+        posts_with_scores.sort(key=lambda x: x['trending_score'], reverse=True)
+        
+        # Get top 10 trending posts
+        top_trending = posts_with_scores[:10]
+        
+        # Format response data
+        posts_data = []
+        for item in top_trending:
+            post = item['post']
             
             posts_data.append({
                 'id': post.id,
@@ -678,9 +692,10 @@ def trending_posts(request):
                 'content': post.content,
                 'excerpt': post.excerpt,
                 'created_at': post.created_at,
-                'views': post.views,
-                'like_count': like_count,
-                'comment_count': comment_count,
+                'views': post.view_count(),
+                'like_count': post.like_count(),
+                'comment_count': post.comment_count(),
+                'trending_score': item['trending_score'],  # Include the algorithm score
                 'author': {
                     'id': post.author.id,
                     'username': post.author.username,
@@ -694,7 +709,17 @@ def trending_posts(request):
                 } if post.category else None
             })
         
-        return Response(posts_data)
+        return Response({
+            'results': posts_data,
+            'algorithm_info': {
+                'name': 'Time Delay Weighted Engagement Algorithm',
+                'description': 'Uses exponential decay to prioritize recent engagement',
+                'formula': '(comments×5 + likes×3 + views×1) × e^(-λ×hours_since_decay)',
+                'decay_hours': 24,
+                'lambda_decay': 0.1
+            }
+        })
+        
     except Exception as e:
         return Response(
             {'error': 'Failed to fetch trending posts'}, 
@@ -867,3 +892,158 @@ def category_detail(request, pk):
         
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Notification views
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def notifications_list(request):
+    """Get user's notifications"""
+    notifications = Notification.objects.filter(recipient=request.user).select_related('sender')
+    
+    # Filter by read status if specified
+    is_read = request.GET.get('is_read')
+    if is_read is not None:
+        is_read_bool = is_read.lower() == 'true'
+        notifications = notifications.filter(is_read=is_read_bool)
+    
+    # Apply pagination
+    paginator = PostPagination()
+    paginated_notifications = paginator.paginate_queryset(notifications, request)
+    serializer = NotificationSerializer(paginated_notifications, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, pk):
+    """Mark a notification as read"""
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification.mark_as_read()
+    return Response({'message': 'Notification marked as read'})
+
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    """Mark all user's notifications as read"""
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return Response({'message': 'All notifications marked as read'})
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def notifications_count(request):
+    """Get count of unread notifications"""
+    unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    return Response({'unread_count': unread_count})
+
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_notification(request, pk):
+    """Delete a notification"""
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Algorithmic Recommendation Views
+@api_view(['GET'])
+def recommended_posts(request):
+    """Get algorithmic post recommendations"""
+    from .recommendation_engine import RecommendationEngine
+    
+    user = request.user if request.user.is_authenticated else None
+    engine = RecommendationEngine(user)
+    
+    limit = int(request.GET.get('limit', 12))
+    recommended_posts = engine.get_post_recommendations(limit)
+    
+    serializer = PostSerializer(recommended_posts, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def recommended_users(request):
+    """Get algorithmic user recommendations"""
+    from .recommendation_engine import RecommendationEngine
+    from django.contrib.auth import get_user_model
+    
+    User = get_user_model()
+    user = request.user if request.user.is_authenticated else None
+    engine = RecommendationEngine(user)
+    
+    limit = int(request.GET.get('limit', 12))
+    recommended_users = engine.get_user_recommendations(limit)
+    
+    # Serialize user data with additional stats
+    users_data = []
+    for recommended_user in recommended_users:
+        user_data = {
+            'id': recommended_user.id,
+            'username': recommended_user.username,
+            'first_name': recommended_user.first_name,
+            'last_name': recommended_user.last_name,
+            'email': recommended_user.email,
+            'posts_count': getattr(recommended_user, 'posts_count', 0),
+            'followers_count': getattr(recommended_user, 'followers_count', 0),
+            'avg_post_likes': getattr(recommended_user, 'avg_post_likes', 0) or 0,
+        }
+        users_data.append(user_data)
+    
+    return Response(users_data)
+
+
+@api_view(['GET'])
+def trending_topics(request):
+    """Get trending topics/categories based on recent activity"""
+    from .recommendation_engine import RecommendationEngine
+    
+    user = request.user if request.user.is_authenticated else None
+    engine = RecommendationEngine(user)
+    
+    limit = int(request.GET.get('limit', 10))
+    topics = engine.get_trending_topics(limit)
+    
+    return Response(topics)
+
+
+@api_view(['GET'])
+def all_users(request):
+    """Get all users for recommendations (fallback)"""
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count
+    
+    User = get_user_model()
+    
+    users = User.objects.annotate(
+        posts_count=Count('posts'),
+        followers_count=Count('followers')
+    ).filter(
+        posts_count__gt=0  # Only users with posts
+    ).order_by('-followers_count', '-posts_count')
+    
+    # Apply pagination
+    paginator = PostPagination()
+    paginated_users = paginator.paginate_queryset(users, request)
+    
+    users_data = []
+    for user in paginated_users:
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'posts_count': user.posts_count,
+            'followers_count': user.followers_count,
+        }
+        users_data.append(user_data)
+    
+    return paginator.get_paginated_response(users_data)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView
+from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView, Notification
 from authentication.serializers import UserSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -173,6 +173,13 @@ class PostCreateSerializer(serializers.ModelSerializer):
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)
 
+class PostViewSerializer(serializers.ModelSerializer):
+    """Serializer for post views"""
+    class Meta:
+        model = PostView
+        fields = ['id', 'user', 'post', 'ip_address', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
 class FollowSerializer(serializers.ModelSerializer):
     """Serializer for follow relationships"""
     follower = UserSerializer(read_only=True)
@@ -211,4 +218,59 @@ class SavedPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedPost
         fields = ['id', 'post', 'user', 'saved_at']
-        read_only_fields = ['user', 'saved_at'] 
+        read_only_fields = ['user', 'saved_at']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for notifications"""
+    sender = UserSerializer(read_only=True)
+    time_ago = serializers.SerializerMethodField()
+    related_object_data = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'notification_type', 'title', 'message', 'is_read', 
+            'created_at', 'sender', 'time_ago', 'related_object_data', 'extra_data'
+        ]
+        read_only_fields = ['id', 'created_at', 'sender']
+    
+    def get_time_ago(self, obj):
+        """Get human-readable time ago"""
+        from django.utils import timezone
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now"
+    
+    def get_related_object_data(self, obj):
+        """Get related object data based on notification type"""
+        if not obj.related_object:
+            return None
+        
+        if obj.notification_type in ['like', 'comment', 'trending'] and hasattr(obj.related_object, 'title'):
+            # Post-related notifications
+            return {
+                'type': 'post',
+                'id': obj.related_object.id,
+                'title': obj.related_object.title,
+                'slug': getattr(obj.related_object, 'slug', None)
+            }
+        elif obj.notification_type == 'comment' and hasattr(obj.related_object, 'content'):
+            # Comment-related notifications
+            return {
+                'type': 'comment',
+                'id': obj.related_object.id,
+                'content': obj.related_object.content[:100] + '...' if len(obj.related_object.content) > 100 else obj.related_object.content
+            }
+        
+        return None 
