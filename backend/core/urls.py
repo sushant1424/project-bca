@@ -18,15 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from .admin_dashboard import admin_dashboard_view
+from debug_views import debug_post_creation, debug_info
+
 
 urlpatterns = [
-    path('admin/dashboard/', admin_dashboard_view, name='admin_dashboard'),
     path('admin/', admin.site.urls),
-    
     # API endpoints
     path('api/auth/', include('authentication.urls')),
     path('api/posts/', include('posts.urls')),
+    # Debug endpoints
+    path('api/debug/create-post/', debug_post_creation, name='debug_create_post'),
+    path('api/debug/info/', debug_info, name='debug_info'),
 ]
 
 # Serve media files during development

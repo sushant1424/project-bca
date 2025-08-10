@@ -8,6 +8,8 @@ import { authenticatedFetch, buildApiUrl } from '../config/api';
 import API_CONFIG from '../config/api';
 import useToast from '../hooks/useToast';
 import { ToastContainer } from './ToastNotification';
+import PremiumBadge from './PremiumBadge';
+import PremiumPaywall from './PremiumPaywall';
 
 const PostDetail = () => {
   const { id: postId } = useParams();
@@ -430,7 +432,7 @@ if (!post) {
         
         {/* Category Tag */}
         {post.category && (
-          <div className="mb-6">
+          <div className="mb-4">
             <span 
               className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wide"
               style={{ 
@@ -443,13 +445,32 @@ if (!post) {
           </div>
         )}
 
-        {/* Post Title */}
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-          {post.title}
-        </h1>
+        {/* Post Title with Premium Badge */}
+        <div className="mb-6">
+          <div className="flex items-start gap-3 mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight flex-1">
+              {post.title}
+            </h1>
+            {(post.is_premium === true || post.is_premium === 'true') && (
+              <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-300 rounded-full flex-shrink-0 mt-1">
+                <span className="text-yellow-500 mr-2">👑</span>
+                <span className="text-sm font-medium text-yellow-800">Premium</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Post Excerpt */}
+        {post.excerpt && (
+          <div className="mb-8">
+            <p className="text-xl text-gray-600 leading-relaxed font-light">
+              {post.excerpt}
+            </p>
+          </div>
+        )}
 
         {/* Author Info & Meta */}
-        <div className="flex items-center mb-8">
+        <div className="flex items-center mb-8 pb-8 border-b border-gray-200">
           <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 mr-4">
             {post.author.avatar ? (
               <img 
@@ -490,14 +511,176 @@ if (!post) {
           </div>
         </div>
 
+        {/* Featured Image */}
+        {post.image && (
+          <div className="mb-12">
+            <img 
+              src={post.image} 
+              alt={post.title}
+              className="w-full h-64 md:h-80 lg:h-96 object-cover rounded-lg shadow-lg"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            {post.image_credit && (
+              <p className="text-sm text-gray-500 mt-3 text-center italic">
+                {post.image_credit}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Post Content */}
-        <div className="prose prose-lg prose-gray max-w-none mb-12">
-          <div 
-            className="text-gray-800 leading-relaxed text-lg space-y-6"
-            dangerouslySetInnerHTML={{ 
-              __html: formatPostContent(post.content)
-            }}
-          />
+        <div className="mb-12">
+          {(post.is_premium === true || post.is_premium === 'true') && !isOwnPost() && !user?.is_premium ? (
+            // Show premium paywall for non-premium users
+            <div>
+              {/* Show preview text if available */}
+              {post.premium_preview && (
+                <div className="text-gray-800 leading-relaxed text-lg space-y-6 mb-8" style={{fontSize: '18px', lineHeight: '1.6'}}>
+                  <p className="mb-6">{post.premium_preview}</p>
+                </div>
+              )}
+              
+              {/* Premium Paywall */}
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-dashed border-purple-300 rounded-lg p-8 text-center my-8">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-2xl">🔒</span>
+                  </div>
+                </div>
+                
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Premium Content</h3>
+                
+                <p className="text-gray-600 mb-4 max-w-md mx-auto">
+                  {post.premium_preview || "This is premium content. Upgrade to premium to read the full article and access exclusive content."}
+                </p>
+                
+                <button 
+                  onClick={() => showSuccess('Premium Feature', 'Premium subscription feature coming soon!')}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-medium inline-flex items-center space-x-2"
+                >
+                  <span>👑</span>
+                  <span>Upgrade to Premium</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Show full content for premium users or post authors
+            <>
+              <style>
+                {`
+                  .post-content h1 {
+                    font-size: 2.25rem;
+                    font-weight: 800;
+                    color: #1f2937;
+                    margin-top: 2rem;
+                    margin-bottom: 1rem;
+                    line-height: 1.2;
+                  }
+                  .post-content h2 {
+                    font-size: 1.875rem;
+                    font-weight: 700;
+                    color: #1f2937;
+                    margin-top: 2rem;
+                    margin-bottom: 1rem;
+                    line-height: 1.3;
+                  }
+                  .post-content h3 {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    color: #1f2937;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.75rem;
+                    line-height: 1.4;
+                  }
+                  .post-content h4 {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: #1f2937;
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.75rem;
+                  }
+                  .post-content p {
+                    margin-bottom: 1.25rem;
+                    color: #374151;
+                    line-height: 1.7;
+                  }
+                  .post-content blockquote {
+                    border-left: 4px solid #e5e7eb;
+                    padding-left: 1.5rem;
+                    margin: 1.5rem 0;
+                    font-style: italic;
+                    color: #6b7280;
+                    background-color: #f9fafb;
+                    padding: 1rem 1.5rem;
+                    border-radius: 0.375rem;
+                  }
+                  .post-content strong {
+                    font-weight: 600;
+                    color: #1f2937;
+                  }
+                  .post-content em {
+                    font-style: italic;
+                    color: #4b5563;
+                  }
+                  .post-content ul {
+                    list-style-type: disc;
+                    padding-left: 1.5rem;
+                    margin: 1.25rem 0;
+                  }
+                  .post-content ol {
+                    list-style-type: decimal;
+                    padding-left: 1.5rem;
+                    margin: 1.25rem 0;
+                  }
+                  .post-content li {
+                    margin: 0.5rem 0;
+                    color: #374151;
+                  }
+                  .post-content code {
+                    background-color: #f3f4f6;
+                    color: #1f2937;
+                    padding: 0.125rem 0.25rem;
+                    border-radius: 0.25rem;
+                    font-size: 0.875em;
+                    font-family: ui-monospace, SFMono-Regular, monospace;
+                  }
+                  .post-content pre {
+                    background-color: #f3f4f6;
+                    color: #1f2937;
+                    padding: 1rem;
+                    border-radius: 0.5rem;
+                    overflow-x: auto;
+                    margin: 1.5rem 0;
+                  }
+                  .post-content pre code {
+                    background-color: transparent;
+                    padding: 0;
+                  }
+                  .post-content a {
+                    color: #3b82f6;
+                    text-decoration: underline;
+                  }
+                  .post-content a:hover {
+                    color: #1d4ed8;
+                  }
+                `}
+              </style>
+              <div 
+                className="post-content"
+                style={{
+                  fontSize: '18px', 
+                  lineHeight: '1.7',
+                  color: '#374151'
+                }}
+                dangerouslySetInnerHTML={{ 
+                  __html: post.content
+                }}
+              />
+            </>
+          )}
         </div>
 
         {/* Action Bar - Bottom */}
@@ -506,12 +689,6 @@ if (!post) {
             {/* Left side - Like count and reactions */}
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
-                <div className="flex -space-x-1">
-                  {/* User avatars for likes */}
-                  <div className="w-6 h-6 bg-gray-300 rounded-full border-2 border-white"></div>
-                  <div className="w-6 h-6 bg-blue-300 rounded-full border-2 border-white"></div>
-                  <div className="w-6 h-6 bg-green-300 rounded-full border-2 border-white"></div>
-                </div>
                 <span className="text-sm text-gray-600">{post.like_count} Likes • {post.comment_count} Comments</span>
               </div>
             </div>

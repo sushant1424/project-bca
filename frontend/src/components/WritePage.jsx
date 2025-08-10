@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Send, Image as ImageIcon, Tag, ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import SubstackEditor from './SubstackEditor';
 import { useToast } from '../context/ToastContext';
 import {
   AlertDialog,
@@ -22,7 +23,10 @@ const WritePage = ({ onPostCreated }) => {
     content: '',
     excerpt: '',
     image: '',
-    category: ''
+    imageCredit: '',
+    category: '',
+    is_premium: false,
+    premium_preview: ''
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +38,9 @@ const WritePage = ({ onPostCreated }) => {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [loadingEdit, setLoadingEdit] = useState(false);
+  // Image upload state
+  const [imageUploadType, setImageUploadType] = useState('url');
+  const [selectedFile, setSelectedFile] = useState(null);
   // Searchable dropdown state
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
@@ -63,7 +70,9 @@ const WritePage = ({ onPostCreated }) => {
           content: post.content || '',
           excerpt: post.excerpt || '',
           image: post.image || '',
-          category: post.category?.id || ''
+          category: post.category?.id || '',
+          is_premium: post.is_premium || false,
+          premium_preview: post.premium_preview || ''
         });
         setIsEditing(true);
         setEditingPostId(post.id);
@@ -93,7 +102,9 @@ const WritePage = ({ onPostCreated }) => {
           content: post.content || '',
           excerpt: post.excerpt || '',
           image: post.image || '',
-          category: post.category?.id || ''
+          category: post.category?.id || '',
+          is_premium: post.is_premium || false,
+          premium_preview: post.premium_preview || ''
         });
         setIsEditing(true);
         setEditingPostId(postId);
@@ -105,6 +116,37 @@ const WritePage = ({ onPostCreated }) => {
       setError('Failed to load post for editing');
     } finally {
       setLoadingEdit(false);
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      setSelectedFile(file);
+      // For now, we'll create a local URL for preview
+      // In production, you'd upload to a cloud service like AWS S3, Cloudinary, etc.
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          image: e.target.result // This is a data URL for preview
+        }));
+      };
+      reader.readAsDataURL(file);
+      setError(''); // Clear any previous errors
     }
   };
 
@@ -464,24 +506,6 @@ const WritePage = ({ onPostCreated }) => {
                     />
                   )}
                 </div>
-
-                {/* Image URL */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Featured Image URL
-                  </label>
-                  <div className="relative">
-                    <ImageIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="url"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* Excerpt */}
@@ -500,66 +524,62 @@ const WritePage = ({ onPostCreated }) => {
                 />
               </div>
 
-              {/* Content */}
+              {/* Premium Content Settings */}
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center space-x-3 mb-3">
+                  <input
+                    type="checkbox"
+                    id="is_premium"
+                    name="is_premium"
+                    checked={formData.is_premium}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                  <label htmlFor="is_premium" className="text-sm font-medium text-gray-700">
+                    Make this a premium post
+                  </label>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Premium
+                  </span>
+                </div>
+                
+                {formData.is_premium && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Premium Preview Text
+                    </label>
+                    <textarea
+                      name="premium_preview"
+                      value={formData.premium_preview}
+                      onChange={handleChange}
+                      placeholder="Enter a preview text that non-premium users will see..."
+                      rows="3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      maxLength={300}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This preview will be shown to non-premium users before they're prompted to upgrade.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Content - Modern Rich Text Editor */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Content
                 </label>
-                <textarea
-                  name="content"
+                <SubstackEditor
                   value={formData.content}
-                  onChange={handleChange}
-                  placeholder="Write your post content here..."
-                  rows="20"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-lg leading-relaxed"
+                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                  placeholder="Tell your story..."
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Preview */}
-        <div className="w-96 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
-          
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            {formData.title && (
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">{formData.title}</h2>
-            )}
-            
-            {formData.excerpt && (
-              <p className="text-gray-600 mb-4 italic">{formData.excerpt}</p>
-            )}
-            
-            {formData.image && (
-              <img 
-                src={formData.image} 
-                alt="Featured" 
-                className="w-full h-48 object-cover rounded-lg mb-4"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-            
-            {formData.content && (
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-800 whitespace-pre-wrap">{formData.content}</p>
-              </div>
-            )}
-            
-            {!formData.title && !formData.content && (
-              <p className="text-gray-500 text-center py-8">Start writing to see a preview...</p>
-            )}
-          </div>
 
-          {/* Writing as */}
-          <div className="mt-6 p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm text-gray-500">
-              Writing as <span className="font-medium text-gray-700">{user.username}</span>
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Unsaved Changes Alert Dialog */}

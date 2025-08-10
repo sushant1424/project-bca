@@ -162,9 +162,35 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
                 value={formData.image}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://images.unsplash.com/photo-example.jpg"
               />
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Tip: Use free image services like Unsplash, Pixabay, or upload to Imgur for reliable image URLs
+            </p>
+            {/* Image Preview */}
+            {formData.image && formData.image.trim() && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-600 mb-2">Preview:</p>
+                <div className="w-32 h-20 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                    onLoad={(e) => {
+                      e.target.nextSibling.style.display = 'none';
+                    }}
+                  />
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400" style={{display: 'none'}}>
+                    Invalid URL
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Error Message */}

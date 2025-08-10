@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLike } from '../contexts/LikeContext';
 import { useFollow } from '../contexts/FollowContext';
+import PremiumBadge from './PremiumBadge';
 
 const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
   const navigate = useNavigate();
@@ -193,7 +194,7 @@ const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
   const handleUserClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/user/${post.author.id}`);
+    navigate(`/profile/${post.author.username}`);
   };
 
   // Check if current user is the author of the post
@@ -260,28 +261,72 @@ const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
         {/* Content with Medium-style layout */}
         <div className="cursor-pointer mb-6 flex items-start gap-6" onClick={() => onPostClick && onPostClick(post.id)}>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 hover:text-gray-700 transition-colors leading-tight" style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
-              {post.title}
-            </h2>
-            <p className="text-gray-500 text-base line-clamp-2 leading-relaxed mb-4" style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
-              {post.content?.length > 180 ? `${post.content.substring(0, 180)}...` : post.content}
-            </p>
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors leading-tight" style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
+                {post.title}
+              </h2>
+              {(post.is_premium === true || post.is_premium === 'true') && (
+                <span className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-300 rounded-full">
+                  <span className="text-yellow-500 mr-1">👑</span>
+                  <span className="text-xs font-medium text-yellow-800">Premium</span>
+                </span>
+              )}
+            </div>
+            <div 
+              className="text-gray-600 text-base md:text-lg line-clamp-2 leading-relaxed mb-5" 
+              style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}
+            >
+              {(() => {
+                let content = post.excerpt || post.content || '';
+                
+                // Remove HTML tags more aggressively
+                let cleanText = content
+                  .replace(/&lt;p&gt;/gi, '') // Remove encoded <p>
+                  .replace(/&lt;\/p&gt;/gi, ' ') // Remove encoded </p>
+                  .replace(/<p>/gi, '') // Remove <p>
+                  .replace(/<\/p>/gi, ' ') // Remove </p>
+                  .replace(/&lt;/g, '<') // Decode &lt;
+                  .replace(/&gt;/g, '>') // Decode &gt;
+                  .replace(/<[^>]*>/g, '') // Remove all HTML tags
+                  .replace(/&nbsp;/g, ' ')
+                  .replace(/&amp;/g, '&')
+                  .replace(/&quot;/g, '"')
+                  .replace(/&#39;/g, "'")
+                  .replace(/\s+/g, ' ')
+                  .trim();
+                
+                return cleanText.length > 200 ? `${cleanText.substring(0, 200)}...` : cleanText;
+              })()}
+            </div>
           </div>
           
-          {/* Medium-sized image on right side (only if image exists) */}
-          {post.image && (
-            <div className="flex-shrink-0">
+          {/* Large image on right side (Medium-style) - Only show if post has image */}
+          {post.image && post.image.trim() && (
+            <div className="w-40 h-28 md:w-44 md:h-32 flex-shrink-0 ml-6">
               <img 
                 src={post.image} 
-                alt={post.title}
-                className="w-32 h-32 object-cover rounded-lg hover:opacity-95 transition-opacity"
+                alt={post.title || 'Post image'}
+                className="w-full h-full object-cover rounded-lg shadow-sm bg-gray-100"
+                onError={(e) => {
+                  console.log('Image failed to load:', post.image);
+                  // Hide the image container if image fails to load
+                  e.target.parentElement.style.display = 'none';
+                }}
+                onLoad={(e) => {
+                  console.log('Image loaded successfully:', post.image);
+                }}
               />
+              {post.image_credit && (
+                <p className="text-xs text-gray-400 mt-2 text-center truncate">
+                  {post.image_credit}
+                </p>
+              )}
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
           <div className="flex items-center space-x-4">
             <button
               onClick={handleLike}

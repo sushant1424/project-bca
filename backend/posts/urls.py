@@ -67,4 +67,7 @@ urlpatterns = [
     path('recommendations/users/', views.recommended_users, name='recommended_users'),
     path('trending-topics/', views.trending_topics, name='trending_topics'),
     path('users/', views.all_users, name='all_users'),
+    
+    # User profile by username
+    path('users/<str:username>/', views.user_profile_by_username, name='user_profile_by_username'),
 ] 

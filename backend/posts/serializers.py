@@ -117,9 +117,10 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'content', 'excerpt', 'image', 'author', 
+            'id', 'title', 'content', 'excerpt', 'image', 'image_credit', 'author', 
             'created_at', 'like_count', 'comment_count', 'saved_count', 'view_count', 'unique_view_count',
-            'is_liked', 'is_saved', 'is_following_author', 'comments', 'views', 'category', 'is_published'
+            'is_liked', 'is_saved', 'is_following_author', 'comments', 'views', 'category', 'is_published',
+            'is_premium', 'premium_price', 'premium_preview', 'allow_tips'
         ]
         read_only_fields = ['author', 'created_at', 'views', 'view_count', 'unique_view_count']
     
@@ -135,11 +136,17 @@ class PostSerializer(serializers.ModelSerializer):
     
     def get_view_count(self, obj):
         """Return accurate view count from PostView model"""
-        return obj.view_count()
+        try:
+            return obj.view_count()
+        except Exception:
+            return getattr(obj, 'views', 0)
     
     def get_unique_view_count(self, obj):
         """Return unique view count (distinct users + distinct IPs)"""
-        return obj.unique_view_count()
+        try:
+            return obj.unique_view_count()
+        except Exception:
+            return getattr(obj, 'views', 0)
     
     def get_is_liked(self, obj):
         request = self.context.get('request')
@@ -165,12 +172,24 @@ class PostSerializer(serializers.ModelSerializer):
 
 class PostCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating posts"""
+    imageCredit = serializers.CharField(source='image_credit', required=False, allow_blank=True)
+    
     class Meta:
         model = Post
-        fields = ['title', 'content', 'excerpt', 'image', 'category', 'is_published']
+        fields = ['title', 'content', 'excerpt', 'image', 'imageCredit', 'category', 'is_published', 'is_premium', 'premium_price', 'premium_preview', 'allow_tips']
     
     def create(self, validated_data):
-        validated_data['author'] = self.context['request'].user
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            validated_data['author'] = request.user
+            print(f"Setting author to: {request.user} (ID: {request.user.id})")
+        else:
+            print(f"ERROR: No authenticated user found in request context")
+            print(f"Request: {request}")
+            print(f"User: {getattr(request, 'user', 'No user attribute')}")
+            raise serializers.ValidationError("Authentication required - no valid user found")
+        
+        print(f"Final validated_data before save: {validated_data}")
         return super().create(validated_data)
 
 class PostViewSerializer(serializers.ModelSerializer):

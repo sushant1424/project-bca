@@ -193,7 +193,7 @@ const TrendingPage = () => {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/user/${post.author?.id}`);
+                              navigate(`/profile/${post.author?.username}`);
                             }}
                             className="font-medium text-gray-900 hover:text-gray-700 transition-colors text-sm"
                             style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}

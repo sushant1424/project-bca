@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Demo Data Generator for Wrytera
-Creates realistic users and posts for demonstration
+Enhanced Demo Data Generator for Wrytera
+Creates realistic users and rich, long-form posts with premium content
 """
 
 import os
@@ -10,6 +10,7 @@ import django
 from django.utils import timezone
 from datetime import timedelta
 import random
+from decimal import Decimal
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
@@ -21,33 +22,211 @@ from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
-# Demo users with easy credentials
+# Enhanced demo users with diverse backgrounds
 DEMO_USERS = [
-    {'username': 'alex', 'email': 'alex@demo.com', 'first_name': 'Alex', 'last_name': 'Johnson'},
-    {'username': 'sarah', 'email': 'sarah@demo.com', 'first_name': 'Sarah', 'last_name': 'Chen'},
-    {'username': 'mike', 'email': 'mike@demo.com', 'first_name': 'Mike', 'last_name': 'Davis'},
-    {'username': 'emma', 'email': 'emma@demo.com', 'first_name': 'Emma', 'last_name': 'Wilson'},
-    {'username': 'david', 'email': 'david@demo.com', 'first_name': 'David', 'last_name': 'Brown'},
-    {'username': 'lisa', 'email': 'lisa@demo.com', 'first_name': 'Lisa', 'last_name': 'Garcia'},
-    {'username': 'tom', 'email': 'tom@demo.com', 'first_name': 'Tom', 'last_name': 'Miller'},
-    {'username': 'anna', 'email': 'anna@demo.com', 'first_name': 'Anna', 'last_name': 'Taylor'},
-    {'username': 'john', 'email': 'john@demo.com', 'first_name': 'John', 'last_name': 'Anderson'},
-    {'username': 'kate', 'email': 'kate@demo.com', 'first_name': 'Kate', 'last_name': 'Thomas'},
-    {'username': 'ryan', 'email': 'ryan@demo.com', 'first_name': 'Ryan', 'last_name': 'Jackson'},
-    {'username': 'zoe', 'email': 'zoe@demo.com', 'first_name': 'Zoe', 'last_name': 'White'},
-    {'username': 'ben', 'email': 'ben@demo.com', 'first_name': 'Ben', 'last_name': 'Harris'},
-    {'username': 'maya', 'email': 'maya@demo.com', 'first_name': 'Maya', 'last_name': 'Clark'},
-    {'username': 'luke', 'email': 'luke@demo.com', 'first_name': 'Luke', 'last_name': 'Lewis'},
+    {'username': 'alex_tech', 'email': 'alex@demo.com', 'first_name': 'Alex', 'last_name': 'Johnson', 'bio': 'Full-stack developer passionate about AI and web technologies'},
+    {'username': 'sarah_wellness', 'email': 'sarah@demo.com', 'first_name': 'Sarah', 'last_name': 'Chen', 'bio': 'Certified nutritionist and mindfulness coach'},
+    {'username': 'mike_travel', 'email': 'mike@demo.com', 'first_name': 'Mike', 'last_name': 'Davis', 'bio': 'Travel photographer and sustainable tourism advocate'},
+    {'username': 'emma_chef', 'email': 'emma@demo.com', 'first_name': 'Emma', 'last_name': 'Wilson', 'bio': 'Professional chef specializing in plant-based cuisine'},
+    {'username': 'david_finance', 'email': 'david@demo.com', 'first_name': 'David', 'last_name': 'Brown', 'bio': 'Financial advisor and cryptocurrency enthusiast'},
+    {'username': 'lisa_artist', 'email': 'lisa@demo.com', 'first_name': 'Lisa', 'last_name': 'Garcia', 'bio': 'Digital artist and creative director'},
+    {'username': 'tom_fitness', 'email': 'tom@demo.com', 'first_name': 'Tom', 'last_name': 'Miller', 'bio': 'Personal trainer and sports nutrition expert'},
+    {'username': 'anna_writer', 'email': 'anna@demo.com', 'first_name': 'Anna', 'last_name': 'Taylor', 'bio': 'Freelance writer and content strategist'},
+    {'username': 'john_business', 'email': 'john@demo.com', 'first_name': 'John', 'last_name': 'Anderson', 'bio': 'Startup founder and business mentor'},
+    {'username': 'kate_educator', 'email': 'kate@demo.com', 'first_name': 'Kate', 'last_name': 'Thomas', 'bio': 'Online educator and course creator'},
+    {'username': 'ryan_designer', 'email': 'ryan@demo.com', 'first_name': 'Ryan', 'last_name': 'Jackson', 'bio': 'UX/UI designer and design systems specialist'},
+    {'username': 'zoe_scientist', 'email': 'zoe@demo.com', 'first_name': 'Zoe', 'last_name': 'White', 'bio': 'Environmental scientist and climate researcher'},
+    {'username': 'ben_musician', 'email': 'ben@demo.com', 'first_name': 'Ben', 'last_name': 'Harris', 'bio': 'Music producer and sound engineer'},
+    {'username': 'maya_psychologist', 'email': 'maya@demo.com', 'first_name': 'Maya', 'last_name': 'Clark', 'bio': 'Clinical psychologist and mental health advocate'},
+    {'username': 'luke_entrepreneur', 'email': 'luke@demo.com', 'first_name': 'Luke', 'last_name': 'Lewis', 'bio': 'Serial entrepreneur and innovation consultant'},
 ]
 
-# Realistic post content by category
+# Categories to create
+CATEGORIES = [
+    {'name': 'Technology', 'description': 'Latest in tech, programming, AI, and digital innovation', 'color': '#3B82F6'},
+    {'name': 'Health & Wellness', 'description': 'Physical and mental health, nutrition, and lifestyle', 'color': '#10B981'},
+    {'name': 'Travel & Adventure', 'description': 'Travel guides, experiences, and cultural exploration', 'color': '#F59E0B'},
+    {'name': 'Food & Cooking', 'description': 'Recipes, culinary techniques, and food culture', 'color': '#EF4444'},
+    {'name': 'Business & Finance', 'description': 'Entrepreneurship, investing, and financial advice', 'color': '#8B5CF6'},
+    {'name': 'Art & Design', 'description': 'Creative arts, design principles, and visual culture', 'color': '#EC4899'},
+    {'name': 'Education & Learning', 'description': 'Teaching methods, online learning, and skill development', 'color': '#06B6D4'},
+    {'name': 'Science & Environment', 'description': 'Scientific discoveries and environmental issues', 'color': '#84CC16'},
+    {'name': 'Music & Entertainment', 'description': 'Music production, entertainment industry insights', 'color': '#F97316'},
+    {'name': 'Personal Development', 'description': 'Self-improvement, productivity, and life skills', 'color': '#6366F1'},
+]
+
+# Comprehensive post content with rich, long-form articles
 POST_CONTENT = {
     'Technology': [
         {
-            'title': 'The Future of AI in Web Development',
-            'content': '''Artificial Intelligence is revolutionizing how we build web applications. From automated code generation to intelligent debugging, AI tools are becoming indispensable for modern developers.
+            'title': 'The Complete Guide to Building AI-Powered Web Applications in 2024',
+            'excerpt': 'A comprehensive deep-dive into integrating artificial intelligence into modern web development workflows, featuring practical examples and cutting-edge tools.',
+            'content': '''# The Complete Guide to Building AI-Powered Web Applications in 2024
 
-In this comprehensive guide, I'll explore the latest AI-powered development tools that are changing the game. We'll look at GitHub Copilot, which can generate entire functions from simple comments, and ChatGPT's ability to help with complex problem-solving.
+## Introduction: The AI Revolution in Web Development
+
+Artificial Intelligence is no longer a futuristic concept—it's actively reshaping how we build, deploy, and maintain web applications. From automated code generation to intelligent user interfaces, AI tools are becoming essential components of the modern developer's toolkit.
+
+In this comprehensive guide, we'll explore the practical applications of AI in web development, examine the tools that are changing the industry, and provide hands-on examples you can implement today.
+
+## Chapter 1: AI-Powered Development Tools
+
+### GitHub Copilot: Your AI Pair Programmer
+
+GitHub Copilot has revolutionized the coding experience by providing intelligent code suggestions directly in your IDE. Unlike traditional autocomplete, Copilot understands context and can generate entire functions from simple comments.
+
+**Key Features:**
+- Context-aware code generation
+- Multi-language support (JavaScript, Python, TypeScript, Go, and more)
+- Integration with popular IDEs (VS Code, JetBrains, Neovim)
+- Learning from your coding patterns
+
+**Practical Example:**
+```javascript
+// Generate a function to validate email addresses
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+```
+
+### ChatGPT and Code Generation
+
+ChatGPT has become an invaluable tool for problem-solving, debugging, and learning new technologies. Its ability to explain complex concepts and generate working code makes it perfect for both beginners and experienced developers.
+
+## Chapter 2: Machine Learning Integration
+
+### Client-Side ML with TensorFlow.js
+
+Modern web applications can now run machine learning models directly in the browser, enabling features like:
+
+- Real-time image classification
+- Natural language processing
+- Predictive text and autocomplete
+- Personalized user experiences
+
+**Implementation Example:**
+```javascript
+import * as tf from '@tensorflow/tfjs';
+
+// Load a pre-trained model
+const model = await tf.loadLayersModel('/models/image-classifier.json');
+
+// Make predictions
+const prediction = model.predict(imageData);
+```
+
+### Server-Side AI with Python Integration
+
+For more complex AI operations, server-side integration with Python frameworks like FastAPI provides powerful capabilities:
+
+```python
+from fastapi import FastAPI
+from transformers import pipeline
+
+app = FastAPI()
+classifier = pipeline("sentiment-analysis")
+
+@app.post("/analyze-sentiment")
+async def analyze_sentiment(text: str):
+    result = classifier(text)
+    return {"sentiment": result[0]["label"], "confidence": result[0]["score"]}
+```
+
+## Chapter 3: AI-Enhanced User Interfaces
+
+### Intelligent Form Validation
+
+AI can provide real-time, context-aware form validation that goes beyond simple regex patterns:
+
+- Semantic validation of addresses using geocoding APIs
+- Content moderation for user-generated content
+- Smart autocomplete based on user behavior
+- Dynamic form adaptation based on user input
+
+### Personalized Content Delivery
+
+Machine learning algorithms can analyze user behavior to deliver personalized experiences:
+
+- Recommendation systems for content
+- Dynamic pricing based on user segments
+- A/B testing optimization
+- Predictive user journey mapping
+
+## Chapter 4: Performance Optimization with AI
+
+### Automated Performance Monitoring
+
+AI-powered tools can continuously monitor your application's performance and suggest optimizations:
+
+- Lighthouse CI with automated suggestions
+- Bundle analysis and optimization
+- Database query optimization
+- CDN configuration recommendations
+
+### Predictive Scaling
+
+Cloud platforms now offer AI-driven auto-scaling that predicts traffic patterns and scales resources proactively rather than reactively.
+
+## Chapter 5: Security and AI
+
+### Automated Vulnerability Detection
+
+AI tools can scan your codebase for security vulnerabilities:
+
+- Static code analysis with AI-powered insights
+- Dependency vulnerability scanning
+- Runtime security monitoring
+- Automated penetration testing
+
+### Fraud Detection
+
+Implement real-time fraud detection in your applications:
+
+```javascript
+// Example fraud detection API integration
+const fraudScore = await fetch('/api/fraud-check', {
+    method: 'POST',
+    body: JSON.stringify({
+        userId: user.id,
+        transactionAmount: amount,
+        deviceFingerprint: getDeviceFingerprint(),
+        behaviorMetrics: getUserBehaviorMetrics()
+    })
+});
+```
+
+## Chapter 6: The Future of AI in Web Development
+
+### Emerging Trends
+
+- **No-Code/Low-Code AI**: Tools that allow non-developers to build AI-powered applications
+- **Edge AI**: Running AI models on edge devices for faster response times
+- **Federated Learning**: Training AI models across distributed devices while preserving privacy
+- **AI-Generated UI**: Tools that can generate entire user interfaces from descriptions
+
+### Preparing for the Future
+
+As AI continues to evolve, developers should focus on:
+
+1. **Understanding AI fundamentals**: Basic knowledge of machine learning concepts
+2. **Staying updated with tools**: Regularly exploring new AI-powered development tools
+3. **Ethics and responsibility**: Understanding the implications of AI in applications
+4. **Continuous learning**: AI is rapidly evolving, requiring ongoing education
+
+## Conclusion
+
+The integration of AI in web development is not just a trend—it's the future. Developers who embrace these tools today will be the leaders of tomorrow's tech landscape. Start small, experiment with different tools, and gradually build your AI expertise.
+
+The key is to view AI as a powerful assistant that enhances your capabilities rather than replaces your creativity and problem-solving skills. The future belongs to developers who can effectively collaborate with AI to build better, smarter, and more efficient web applications.
+
+---
+
+*This guide will be regularly updated as new AI tools and techniques emerge. Follow me for the latest insights in AI-powered web development.*''',
+            'is_premium': True,
+            'premium_price': Decimal('9.99'),
+            'premium_preview': 'Learn how to integrate cutting-edge AI tools into your web development workflow. This comprehensive guide covers GitHub Copilot, machine learning integration, and practical examples you can implement today.'
+        },
 
 The integration of AI in web development isn't just about writing code faster. It's about creating more intelligent applications that can adapt to user behavior, provide personalized experiences, and even predict user needs before they arise.
 

@@ -46,11 +46,97 @@ def post_list(request):
         if not request.user.is_authenticated:
             return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        serializer = PostCreateSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Debug logging
+            print(f"=== POST CREATION DEBUG ===")
+            print(f"User: {request.user}")
+            print(f"Request data: {request.data}")
+            print(f"Request content type: {request.content_type}")
+            
+            # Clean the data before serialization
+            data = dict(request.data)
+            
+            # Handle category field specifically
+            if 'category' in data:
+                category_value = data['category']
+                print(f"Category value: '{category_value}' (type: {type(category_value)})")
+                
+                if category_value and isinstance(category_value, str) and category_value.strip():
+                    # Try to find existing category or create new one
+                    from django.utils.text import slugify
+                    category_name = category_value.strip()
+                    try:
+                        category_obj = Category.objects.get(name__iexact=category_name)
+                        print(f"Found existing category: {category_obj}")
+                    except Category.DoesNotExist:
+                        # Create new category
+                        slug = slugify(category_name)
+                        if not slug:
+                            slug = 'general'
+                        
+                        # Ensure unique slug
+                        counter = 1
+                        original_slug = slug
+                        while Category.objects.filter(slug=slug).exists():
+                            slug = f"{original_slug}-{counter}"
+                            counter += 1
+                        
+                        category_obj = Category.objects.create(
+                            name=category_name,
+                            slug=slug
+                        )
+                        print(f"Created new category: {category_obj}")
+                    
+                    # Replace string with category object ID
+                    data['category'] = category_obj.id
+                else:
+                    # Remove empty category
+                    data.pop('category', None)
+                    print("Removed empty category")
+            
+            print(f"Cleaned data: {data}")
+            
+            # Ensure author is set in data before serialization
+            print(f"Setting author in data: {request.user} (ID: {request.user.id})")
+            data['author'] = request.user.id
+            
+            # Create serializer with cleaned data
+            serializer = PostCreateSerializer(data=data, context={'request': request})
+            print(f"Serializer created with author: {data.get('author')}")
+            
+            if serializer.is_valid():
+                print("Serializer is valid, saving...")
+                # Double-check author is set before saving
+                validated_data = serializer.validated_data
+                if 'author' not in validated_data or not validated_data['author']:
+                    print("WARNING: Author not in validated_data, setting manually")
+                    validated_data['author'] = request.user
+                
+                post = serializer.save()
+                print(f"Post saved successfully: {post.id} by {post.author}")
+                
+                # Return the created post with full serialization
+                response_serializer = PostSerializer(post, context={'request': request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                print(f"Serializer validation errors: {serializer.errors}")
+                return Response({
+                    'error': 'Validation failed',
+                    'details': serializer.errors,
+                    'received_data': data
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            import traceback
+            print(f"Exception in post creation: {str(e)}")
+            print(f"Exception type: {type(e)}")
+            traceback.print_exc()
+            
+            return Response({
+                'error': f'Server error during post creation: {str(e)}',
+                'type': str(type(e)),
+                'traceback': traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def post_detail(request, pk):
@@ -1047,3 +1133,52 @@ def all_users(request):
         users_data.append(user_data)
     
     return paginator.get_paginated_response(users_data)
+
+
+@api_view(['GET'])
+def user_profile_by_username(request, username):
+    """Get user profile by username for profile pages"""
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count
+    
+    User = get_user_model()
+    
+    try:
+        user = User.objects.annotate(
+            posts_count=Count('posts', filter=models.Q(posts__is_published=True)),
+            followers_count=Count('followers'),
+            following_count=Count('following')
+        ).get(username=username)
+        
+        # Check if current user is following this user
+        is_following = False
+        if request.user.is_authenticated:
+            is_following = Follow.objects.filter(
+                follower=request.user, 
+                following=user
+            ).exists()
+        
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'bio': getattr(user, 'bio', ''),
+            'avatar': getattr(user, 'avatar', ''),
+            'profile_image_url': user.profile_image_url,
+            'website': getattr(user, 'website', ''),
+            'twitter': getattr(user, 'twitter', ''),
+            'linkedin': getattr(user, 'linkedin', ''),
+            'posts_count': user.posts_count,
+            'followers_count': user.followers_count,
+            'following_count': user.following_count,
+            'is_following': is_following,
+            'date_joined': user.date_joined,
+            'created_at': getattr(user, 'created_at', user.date_joined),
+        }
+        
+        return Response(user_data)
+        
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)

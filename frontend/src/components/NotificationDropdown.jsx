@@ -41,7 +41,7 @@ const NotificationDropdown = () => {
     if (notification.related_object_data?.type === 'post') {
       navigate(`/post/${notification.related_object_data.id}`);
     } else if (notification.notification_type === 'follow' && notification.sender) {
-      navigate(`/user/${notification.sender.id}`);
+      navigate(`/profile/${notification.sender.username}`);
     }
 
     setIsOpen(false);

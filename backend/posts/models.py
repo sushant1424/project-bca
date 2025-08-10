@@ -29,6 +29,7 @@ class Post(models.Model):
     content = models.TextField()
     excerpt = models.TextField(max_length=500, blank=True)  # Short preview
     image = models.URLField(blank=True, null=True)  # Optional featured image
+    image_credit = models.CharField(max_length=200, blank=True, help_text="Image credit/attribution")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
     is_published = models.BooleanField(default=True)
     
@@ -240,8 +241,8 @@ class Tip(models.Model):
 
 class PremiumAccess(models.Model):
     """Track individual premium post purchases"""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='premium_purchases')
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='premium_purchases')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='premium_access_entries')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='premium_access_entries')
     price_paid = models.DecimalField(max_digits=10, decimal_places=2)
     purchased_at = models.DateTimeField(auto_now_add=True)
     

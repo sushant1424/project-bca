@@ -15,6 +15,7 @@ import ProfilePage from './ProfilePage';
 import ProfileSettings from './ProfileSettings';
 import FollowingPage from './FollowingPage';
 import UserProfileView from './UserProfileView';
+import UserProfile from './UserProfile';
 import AdminPanel from './AdminPanel';
 import TrendingPage from './TrendingPage';
 import NotificationsPage from './NotificationsPage';
@@ -215,7 +216,7 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
 
               
               <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
-                <ProfilePage />
+                <UserProfile />
               </main>
             </div>
           </div>
@@ -228,8 +229,6 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
               <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <Sidebar />
               </div>
-              
-
               
               <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <ProfileSettings />
@@ -245,15 +244,6 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
               <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <Sidebar />
               </div>
-              
-              {/* Mobile Sidebar Overlay */}
-              {!sidebarCollapsed && (
-                <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={onToggleSidebar}>
-                  <div className="bg-white w-64 h-full shadow-lg" onClick={(e) => e.stopPropagation()}>
-                    <Sidebar />
-                  </div>
-                </div>
-              )}
               
               <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <FollowingPage />
@@ -307,6 +297,8 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
           </div>
         } />
         <Route path="/user/:userId" element={<UserProfileView />} />
+        <Route path="/profile/:username" element={<UserProfile />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route path="/admin" element={<AdminPanel />} />
       </Routes>
       </NotificationProvider>
