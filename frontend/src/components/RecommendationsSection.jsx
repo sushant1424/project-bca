@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
 import { Badge } from './ui/Badge';
 import { Sparkles, TrendingUp, RefreshCw, ChevronRight } from 'lucide-react';
 
@@ -70,6 +70,24 @@ const RecommendationsSection = () => {
     fetchRecommendations();
   }, [user, token, followingUsers]);
 
+  // Additional effect to handle auth state changes
+  useEffect(() => {
+    if (user !== null) { // Trigger when user changes (login/logout)
+      fetchRecommendations();
+    }
+  }, [user?.id, token]);
+
+  // Listen for logout events to force refresh
+  useEffect(() => {
+    const handleLogout = () => {
+      setRecommendations([]);
+      setLoading(false); // Don't show loading for logged out users
+    };
+
+    window.addEventListener('userLogout', handleLogout);
+    return () => window.removeEventListener('userLogout', handleLogout);
+  }, []);
+
   // Refresh recommendations every 30 seconds for real-time updates
   useEffect(() => {
     const interval = setInterval(fetchRecommendations, 30000);
@@ -80,9 +98,18 @@ const RecommendationsSection = () => {
     navigate('/recommendations');
   };
 
-  // Show popular posts for non-logged-in users, personalized for logged-in users
-  if (!user && recommendations.length === 0 && !loading) {
-    return null; // Only hide if no content to show
+  // Don't render anything for non-logged-in users
+  if (!user) {
+    return null;
+  }
+
+  // Don't render if no recommendations and not loading
+  if (!loading && recommendations.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-gray-500 text-sm">No recommendations available</p>
+      </div>
+    );
   }
 
   return (

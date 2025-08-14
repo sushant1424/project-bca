@@ -174,11 +174,6 @@ const CommentManagement = ({ users, posts, comments, searchTerm, setSearchTerm, 
               </thead>
               <tbody>
                 {paginatedComments.map((comment) => {
-                  // Use the new AdminCommentSerializer data structure
-                  const commentAuthor = comment.author; // Comment author (Made By)
-                  const post = comment.post; // Post info
-                  const postAuthor = comment.post_author; // Post author (Author)
-                  
                   return (
                     <tr key={comment.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">
@@ -191,27 +186,27 @@ const CommentManagement = ({ users, posts, comments, searchTerm, setSearchTerm, 
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">
-                            {(commentAuthor?.username || commentAuthor?.first_name || 'U')[0]?.toUpperCase()}
+                            {(comment.author_name || 'U')[0]?.toUpperCase()}
                           </div>
                           <span className="text-sm">
-                            {commentAuthor?.username || commentAuthor?.first_name || 'Unknown User'}
+                            {comment.author_name || 'Unknown User'}
                           </span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
-                            {(postAuthor?.username || postAuthor?.first_name || 'U')[0]?.toUpperCase()}
+                            {(comment.author_email || 'U')[0]?.toUpperCase()}
                           </div>
                           <span className="text-sm">
-                            {postAuthor?.username || postAuthor?.first_name || 'Unknown Author'}
+                            {comment.author_email || 'Unknown Author'}
                           </span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="max-w-xs">
                           <p className="text-sm text-gray-900 truncate">
-                            {post?.title || 'Unknown Post'}
+                            {comment.post_title || 'Unknown Post'}
                           </p>
                         </div>
                       </td>
@@ -1100,7 +1095,7 @@ const AdminDashboard = ({ adminUser }) => {
       const baseURL = 'http://127.0.0.1:8000';
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Token ${adminToken}`
+        'Authorization': `Token ${token}`
       };
 
       const response = await fetch(`${baseURL}/api/auth/users/${userId}/delete/`, {

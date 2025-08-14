@@ -346,13 +346,23 @@ def delete_user(request, user_id):
     Delete a user (admin only)
     """
     try:
-        # Temporarily allow all authenticated users for demo
-        # if not request.user.is_staff:
-        #     return Response({'message': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+        # Check if user is admin
+        if not request.user.is_staff and not request.user.is_superuser:
+            return Response({'message': 'Access denied. Admin privileges required.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Prevent self-deletion
+        if request.user.id == user_id:
+            return Response({'message': 'Cannot delete your own account'}, status=status.HTTP_400_BAD_REQUEST)
         
         user = User.objects.get(id=user_id)
-        user.delete()
-        return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+        
+        # Soft delete approach - deactivate user instead of hard delete to avoid constraint issues
+        user.is_active = False
+        user.email = f"deleted_{user.id}_{user.email}"  # Prevent email conflicts
+        user.username = f"deleted_{user.id}_{user.username}"  # Prevent username conflicts
+        user.save()
+        
+        return Response({'message': 'User deactivated successfully'}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:

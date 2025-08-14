@@ -23,7 +23,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
     
     try {
       // For admin login, convert username to admin email format
-      const adminEmail = loginData.username === 'admin' ? 'admin@example.com' : `${loginData.username}@example.com`;
+      const adminEmail = loginData.username === 'admin' ? 'admin11@gmail.com' : 
+                        loginData.username === 'admin1' ? 'admin1@gmail.com' : 
+                        `${loginData.username}@gmail.com`;
       
       const loginResponse = await fetch('http://127.0.0.1:8000/api/auth/login/', {
         method: 'POST',
@@ -62,10 +64,52 @@ const AdminLogin = ({ onLoginSuccess }) => {
     }
   };
 
+  // Password validation function
+  const validatePassword = (password) => {
+    const errors = [];
+    
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    
+    if (!/\d/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
+    }
+    
+    return errors;
+  };
+
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
     setCreateAdminLoading(true);
     setCreateAdminError('');
+    
+    // Frontend password validation
+    const passwordErrors = validatePassword(createAdminData.password);
+    if (passwordErrors.length > 0) {
+      setCreateAdminError(passwordErrors.join('. '));
+      setCreateAdminLoading(false);
+      return;
+    }
+    
+    // Check password confirmation
+    if (createAdminData.password !== createAdminData.confirm_password) {
+      setCreateAdminError('Passwords do not match');
+      setCreateAdminLoading(false);
+      return;
+    }
     
     try {
       const response = await fetch('http://127.0.0.1:8000/api/auth/create-admin/', {
@@ -85,7 +129,20 @@ const AdminLogin = ({ onLoginSuccess }) => {
         showSuccess('Success', 'Admin account created successfully!');
         onLoginSuccess(data.user);
       } else {
-        setCreateAdminError(data.error || 'Failed to create admin account');
+        // Handle backend validation errors
+        if (data.errors) {
+          const errorMessages = [];
+          Object.keys(data.errors).forEach(field => {
+            if (Array.isArray(data.errors[field])) {
+              errorMessages.push(...data.errors[field]);
+            } else {
+              errorMessages.push(data.errors[field]);
+            }
+          });
+          setCreateAdminError(errorMessages.join('. '));
+        } else {
+          setCreateAdminError(data.message || data.error || 'Failed to create admin account');
+        }
       }
       
     } catch (error) {
@@ -139,6 +196,31 @@ const AdminLogin = ({ onLoginSuccess }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
+              {createAdminData.password && (
+                <div className="mt-2 text-xs space-y-1">
+                  <div className="text-gray-600 font-medium">Password Requirements:</div>
+                  <div className={`flex items-center ${createAdminData.password.length >= 8 ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className="mr-1">{createAdminData.password.length >= 8 ? '✓' : '✗'}</span>
+                    At least 8 characters
+                  </div>
+                  <div className={`flex items-center ${/[A-Z]/.test(createAdminData.password) ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className="mr-1">{/[A-Z]/.test(createAdminData.password) ? '✓' : '✗'}</span>
+                    One uppercase letter
+                  </div>
+                  <div className={`flex items-center ${/[a-z]/.test(createAdminData.password) ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className="mr-1">{/[a-z]/.test(createAdminData.password) ? '✓' : '✗'}</span>
+                    One lowercase letter
+                  </div>
+                  <div className={`flex items-center ${/\d/.test(createAdminData.password) ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className="mr-1">{/\d/.test(createAdminData.password) ? '✓' : '✗'}</span>
+                    One number
+                  </div>
+                  <div className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(createAdminData.password) ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className="mr-1">{/[!@#$%^&*(),.?":{}|<>]/.test(createAdminData.password) ? '✓' : '✗'}</span>
+                    One special character
+                  </div>
+                </div>
+              )}
             </div>
             
             <div>

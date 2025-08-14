@@ -9,10 +9,11 @@ from django.db.models import Q
 from django.db import models
 from .models import Post, Comment, Follow, Repost, Category, SavedPost, PostView, Notification
 from .serializers import (
-    PostSerializer, PostCreateSerializer, CommentSerializer, AdminCommentSerializer,
+    PostSerializer, PostCreateSerializer, 
     FollowSerializer, RepostSerializer, RepostCreateSerializer,
     CategorySerializer, SavedPostSerializer, NotificationSerializer
 )
+from .comment_serializers import CommentSerializer, AdminCommentSerializer
 
 # Custom pagination class
 class PostPagination(PageNumberPagination):
@@ -747,7 +748,7 @@ def current_user_posts(request):
 
 @api_view(['GET'])
 def trending_posts(request):
-    """Get trending posts using Time Delay Weighted Engagement Algorithm"""
+    """Get trending posts using Exponential Decay Algorithm"""
     try:
         from datetime import datetime, timedelta
         
@@ -921,8 +922,7 @@ def all_comments_list(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def comment_detail(request, pk):
@@ -1194,3 +1194,78 @@ def user_profile_by_username(request, username):
         
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+# Comment Views
+@api_view(['GET', 'POST'])
+def comment_list(request, post_pk):
+    """Get comments for a post or create a new comment"""
+    post = get_object_or_404(Post, pk=post_pk)
+    
+    if request.method == 'GET':
+        comments = Comment.objects.filter(post=post, parent=None).select_related('author').prefetch_related('replies__author')
+        serializer = CommentSerializer(comments, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = CommentSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            comment = serializer.save(author=request.user, post=post)
+            return Response(CommentSerializer(comment, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_comments_list(request):
+    """Get all comments (admin view)"""
+    if not request.user.is_staff and not request.user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    comments = Comment.objects.all().select_related('author', 'post').order_by('-created_at')
+    serializer = AdminCommentSerializer(comments, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def comment_detail(request, pk):
+    """Get, update, or delete a specific comment"""
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = CommentSerializer(comment, context={'request': request})
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        if not request.user.is_authenticated or request.user != comment.author:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = CommentSerializer(comment, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        # Allow comment author or admin to delete
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if request.user != comment.author and not (request.user.is_staff or request.user.is_superuser):
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_comment(request, pk):
+    """Like or unlike a comment"""
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    if comment.likes.filter(id=request.user.id).exists():
+        comment.likes.remove(request.user)
+        return Response({'liked': False, 'like_count': comment.like_count()})
+    else:
+        comment.likes.add(request.user)
+        return Response({'liked': True, 'like_count': comment.like_count()})

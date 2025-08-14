@@ -15,6 +15,8 @@ const HomePage = ({
   const { token, user } = useAuth();
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
+  const [forceRender, setForceRender] = useState(0);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const fetchTrendingTopics = async () => {
     try {
@@ -58,7 +60,14 @@ const HomePage = ({
 
   useEffect(() => {
     fetchTrendingTopics();
-  }, [token]);
+    setShowRecommendations(!!user);
+  }, [token, user]);
+
+  // Force re-render when user authentication state changes
+  useEffect(() => {
+    setForceRender(prev => prev + 1);
+    setShowRecommendations(!!user);
+  }, [user?.id, token]);
 
   // Refresh trending topics every 60 seconds
   useEffect(() => {
@@ -87,10 +96,10 @@ const HomePage = ({
           </div>
           {/* Right Sidebar - Recommendations */}
           <div className="hidden lg:block w-80 flex-shrink-0 space-y-6">
-            {/* Post Recommendations - Only for logged-in users */}
-            {user && (
+            {/* Post Recommendations - Only show container when user is logged in */}
+            {showRecommendations && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <RecommendationsSection />
+                <RecommendationsSection key={`${user?.id || 'anonymous'}-${forceRender}`} />
               </div>
             )}
             
