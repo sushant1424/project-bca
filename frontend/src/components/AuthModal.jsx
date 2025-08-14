@@ -3,6 +3,7 @@ import { Eye, EyeOff, User, Mail, Lock, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useToast } from '../context/ToastContext';
 
 const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess } = useToast();
 
   const passwordRules = {
     minLength: formData.password.length >= 8,
@@ -110,21 +112,127 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Show success toast message
+        if (mode === 'login') {
+          showSuccess('Login Successful', 'Welcome back to Wrytera!');
+        } else {
+          showSuccess('Signup Successful', 'Welcome to Wrytera!');
+        }
+        
         onClose();
-        window.location.reload();
+        
+        // Trigger a custom event to update navbar state instead of reloading
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { 
+          detail: { user: data.user } 
+        }));
       } else {
         if (response.status === 400) {
-          if (data.username && data.username.includes('already exists')) {
-            setErrors({ username: 'This username is already taken. Please choose another.' });
-          } else if (data.email && data.email.includes('already exists')) {
-            setErrors({ email: 'An account with this email already exists.' });
-          } else if (data.non_field_errors) {
-            setErrors({ general: data.non_field_errors[0] || 'Invalid credentials.' });
-          } else if (data.detail) {
-            setErrors({ general: data.detail });
+          // Handle signup-specific errors
+          if (mode === 'signup') {
+            console.log('Signup error data:', data); // Debug log
+            console.log('Error data keys:', Object.keys(data)); // Show what fields have errors
+            console.log('Error data stringified:', JSON.stringify(data, null, 2)); // Show full structure
+            console.log('Full response:', response); // Debug full response
+            
+            // Handle nested error structure (data.errors.field)
+            const errorData = data.errors || data;
+            
+            // Collect all errors to show multiple errors simultaneously
+            const newErrors = {};
+            
+            // Check for username errors
+            if (errorData.username) {
+              if (Array.isArray(errorData.username)) {
+                const usernameError = errorData.username[0];
+                if (usernameError.toLowerCase().includes('already exists') || 
+                    usernameError.toLowerCase().includes('user with this username already exists') ||
+                    usernameError.toLowerCase().includes('already taken')) {
+                  newErrors.username = 'This username is already taken. Please choose another.';
+                } else {
+                  newErrors.username = usernameError;
+                }
+              } else if (typeof errorData.username === 'string') {
+                if (errorData.username.toLowerCase().includes('already exists') || 
+                    errorData.username.toLowerCase().includes('user with this username already exists') ||
+                    errorData.username.toLowerCase().includes('already taken')) {
+                  newErrors.username = 'This username is already taken. Please choose another.';
+                } else {
+                  newErrors.username = errorData.username;
+                }
+              }
+            }
+            
+            // Check for email errors
+            if (errorData.email) {
+              if (Array.isArray(errorData.email)) {
+                const emailError = errorData.email[0];
+                if (emailError.toLowerCase().includes('already exists') || 
+                    emailError.toLowerCase().includes('user with this email already exists') ||
+                    emailError.toLowerCase().includes('already taken')) {
+                  newErrors.email = 'An account with this email already exists.';
+                } else {
+                  newErrors.email = emailError;
+                }
+              } else if (typeof errorData.email === 'string') {
+                if (errorData.email.toLowerCase().includes('already exists') || 
+                    errorData.email.toLowerCase().includes('user with this email already exists') ||
+                    errorData.email.toLowerCase().includes('already taken')) {
+                  newErrors.email = 'An account with this email already exists.';
+                } else {
+                  newErrors.email = errorData.email;
+                }
+              }
+            }
+            
+            // Check for password errors
+            if (errorData.password && Array.isArray(errorData.password)) {
+              newErrors.password = errorData.password[0];
+            }
+            
+            // Check for general errors
+            if (data.non_field_errors) {
+              newErrors.general = data.non_field_errors[0];
+            }
+            
+            // Check for any other field errors
+            Object.keys(errorData).forEach(key => {
+              if (!newErrors[key] && key !== 'username' && key !== 'email' && key !== 'password') {
+                const fieldError = Array.isArray(errorData[key]) ? errorData[key][0] : errorData[key];
+                newErrors[key] = fieldError;
+              }
+            });
+            
+            // Set all errors at once or fallback to general error
+            if (Object.keys(newErrors).length > 0) {
+              setErrors(newErrors);
+            } else {
+              setErrors({ general: 'Please check your input and try again.' });
+            }
           } else {
-            setErrors({ general: 'Please check your input and try again.' });
+            // Handle login-specific errors
+            if (data.non_field_errors) {
+              const errorMessage = data.non_field_errors[0] || 'Invalid credentials.';
+              if (errorMessage.toLowerCase().includes('invalid credentials') || 
+                  errorMessage.toLowerCase().includes('unable to log in')) {
+                setErrors({ general: 'Incorrect email or password. Please check your credentials and try again.' });
+              } else {
+                setErrors({ general: errorMessage });
+              }
+            } else if (data.detail) {
+              setErrors({ general: data.detail });
+            } else if (data.email && data.email.includes('not found')) {
+              setErrors({ general: 'No account found with this email address.' });
+            } else if (data.password) {
+              setErrors({ general: 'Incorrect password. Please try again.' });
+            } else {
+              setErrors({ general: 'Incorrect email or password. Please check your credentials and try again.' });
+            }
           }
+        } else if (response.status === 401) {
+          setErrors({ general: 'Incorrect email or password. Please check your credentials and try again.' });
+        } else if (response.status === 404) {
+          setErrors({ general: 'No account found with this email address.' });
         } else {
           setErrors({ general: 'Something went wrong. Please try again.' });
         }
@@ -146,7 +254,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
@@ -169,13 +277,13 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <User className={`absolute left-3 top-2.5 w-5 h-5 ${errors.username ? 'text-red-500' : 'text-gray-400'}`} />
                 <Input
                   type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className={`pl-10 ${errors.username ? 'border-red-500' : ''}`}
+                  className={`pl-10 ${errors.username ? 'border-red-500 focus:border-red-500' : ''}`}
                   placeholder="Enter your username"
                 />
                 {errors.username && (
@@ -190,13 +298,13 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Mail className={`absolute left-3 top-2.5 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-gray-400'}`} />
               <Input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
+                className={`pl-10 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
                 placeholder="Enter your email"
               />
               {errors.email && (
@@ -243,7 +351,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
@@ -257,10 +365,10 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
-                  {errors.confirmPassword && (
-                    <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
-                  )}
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                )}
               </div>
 
               {formData.password && (

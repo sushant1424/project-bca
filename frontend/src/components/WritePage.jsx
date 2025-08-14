@@ -24,7 +24,7 @@ const WritePage = ({ onPostCreated }) => {
     excerpt: '',
     image: '',
     imageCredit: '',
-    category: '',
+    categories: [], // Changed from single category to multiple categories
     is_premium: false,
     premium_preview: ''
   });
@@ -41,10 +41,11 @@ const WritePage = ({ onPostCreated }) => {
   // Image upload state
   const [imageUploadType, setImageUploadType] = useState('url');
   const [selectedFile, setSelectedFile] = useState(null);
-  // Searchable dropdown state
+  // Multi-category selection state
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
-  const [selectedCategoryName, setSelectedCategoryName] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   // Check if user is logged in and handle editing
   useEffect(() => {
@@ -216,15 +217,58 @@ const WritePage = ({ onPostCreated }) => {
     }));
   };
 
-  // Handle category selection
+  // Handle multiple category selection
   const handleCategorySelect = (categoryId, categoryName) => {
-    setFormData(prev => ({
-      ...prev,
-      category: categoryId
-    }));
-    setSelectedCategoryName(categoryName);
-    setShowCategoryDropdown(false);
+    const categoryExists = selectedCategories.find(cat => cat.id === categoryId);
+    if (!categoryExists) {
+      const newCategory = { id: categoryId, name: categoryName };
+      const updatedCategories = [...selectedCategories, newCategory];
+      setSelectedCategories(updatedCategories);
+      setFormData(prev => ({ ...prev, categories: updatedCategories.map(cat => cat.id) }));
+      setHasUnsavedChanges(true);
+    }
     setCategorySearch('');
+  };
+
+  // Remove category from selection
+  const handleRemoveCategory = (categoryId) => {
+    const updatedCategories = selectedCategories.filter(cat => cat.id !== categoryId);
+    setSelectedCategories(updatedCategories);
+    setFormData(prev => ({ ...prev, categories: updatedCategories.map(cat => cat.id) }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Create new category
+  const handleCreateCategory = async (categoryName) => {
+    if (!categoryName.trim()) return;
+    
+    setIsCreatingCategory(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:8000/api/posts/categories/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: categoryName.trim() })
+      });
+
+      if (response.ok) {
+        const newCategory = await response.json();
+        setCategories(prev => [...prev, newCategory]);
+        handleCategorySelect(newCategory.id, newCategory.name);
+        showSuccess(`Category "${newCategory.name}" created successfully!`);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to create category');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      setError('Failed to create category');
+    } finally {
+      setIsCreatingCategory(false);
+    }
   };
 
   // Filter categories based on search
@@ -433,21 +477,42 @@ const WritePage = ({ onPostCreated }) => {
 
               {/* Category and Excerpt Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Category */}
+                {/* Categories - Multi-select with custom creation */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
+                    Categories
                   </label>
+                  
+                  {/* Selected Categories Tags */}
+                  {selectedCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedCategories.map((category) => (
+                        <span
+                          key={category.id}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800 border border-purple-200"
+                        >
+                          {category.name}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategory(category.id)}
+                            className="ml-2 text-purple-600 hover:text-purple-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="relative">
                     <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                     <input
                       type="text"
-                      value={showCategoryDropdown ? categorySearch : selectedCategoryName || 'Select a category'}
+                      value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
                       onFocus={() => setShowCategoryDropdown(true)}
-                      placeholder="Search categories..."
-                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
-                      readOnly={!showCategoryDropdown}
+                      placeholder="Search or create categories..."
+                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -462,35 +527,54 @@ const WritePage = ({ onPostCreated }) => {
                     {/* Dropdown */}
                     {showCategoryDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredCategories.length > 0 ? (
-                          filteredCategories.map((category) => (
-                            <button
-                              key={category.id}
-                              type="button"
-                              onClick={() => handleCategorySelect(category.id, category.name)}
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                            >
-                              <div className="font-medium text-gray-900">{category.name}</div>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-4 py-3 text-gray-500 text-center">
-                            {categories.length === 0 ? (
-                              <div>
-                                <div>No categories loaded</div>
-                                <div className="text-xs mt-1">Total categories: {categories.length}</div>
-                                <div className="text-xs">Check browser console for API errors</div>
-                              </div>
-                            ) : categorySearch ? (
-                              <div>
-                                <div>No categories match "{categorySearch}"</div>
-                                <div className="text-xs mt-1">Available: {categories.length} categories</div>
+                        {/* Create new category option */}
+                        {categorySearch && !filteredCategories.some(cat => cat.name.toLowerCase() === categorySearch.toLowerCase()) && (
+                          <button
+                            type="button"
+                            onClick={() => handleCreateCategory(categorySearch)}
+                            disabled={isCreatingCategory}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 focus:bg-green-50 focus:outline-none border-b border-gray-100 text-green-700 font-medium"
+                          >
+                            {isCreatingCategory ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                                Creating "{categorySearch}"...
                               </div>
                             ) : (
-                              'Loading categories...'
+                              `+ Create "${categorySearch}"`
                             )}
-                          </div>
+                          </button>
                         )}
+                        
+                        {/* Existing categories */}
+                        {filteredCategories.length > 0 ? (
+                          filteredCategories.map((category) => {
+                            const isSelected = selectedCategories.some(cat => cat.id === category.id);
+                            return (
+                              <button
+                                key={category.id}
+                                type="button"
+                                onClick={() => handleCategorySelect(category.id, category.name)}
+                                className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0 ${
+                                  isSelected ? 'bg-purple-50 text-purple-700' : 'text-gray-900'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{category.name}</span>
+                                  {isSelected && <span className="text-purple-600">✓</span>}
+                                </div>
+                              </button>
+                            );
+                          })
+                        ) : categorySearch && !isCreatingCategory ? (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            No categories match "{categorySearch}"
+                          </div>
+                        ) : !categorySearch ? (
+                          <div className="px-4 py-3 text-gray-500 text-center">
+                            {categories.length === 0 ? 'No categories available' : 'Start typing to search categories'}
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </div>

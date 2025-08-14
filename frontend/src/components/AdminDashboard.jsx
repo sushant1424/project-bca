@@ -1801,18 +1801,18 @@ const AdminDashboard = ({ adminUser }) => {
           color="green"
         />
         <StatCard 
-          title="Total Views" 
-          value={dashboardStats.total_views || 0} 
-          icon={Eye} 
-          trend={dashboardStats.views_trend || 0}
+          title="Total Categories" 
+          value={dashboardStats.total_categories || 0} 
+          icon={Tag} 
+          trend={dashboardStats.categories_trend || 0}
           color="purple"
         />
         <StatCard 
-          title="Total Likes" 
-          value={dashboardStats.total_likes || 0} 
-          icon={Heart} 
-          trend={dashboardStats.likes_trend || 0}
-          color="red"
+          title="Total Comments" 
+          value={dashboardStats.total_comments || 0} 
+          icon={MessageSquare} 
+          trend={dashboardStats.comments_trend || 0}
+          color="blue"
         />
       </div>
 

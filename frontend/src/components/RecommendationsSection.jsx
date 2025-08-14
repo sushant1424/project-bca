@@ -19,8 +19,12 @@ const RecommendationsSection = () => {
     try {
       setLoading(true);
       
-      // Use algorithmic recommendations endpoint
-      const response = await fetch('http://127.0.0.1:8000/api/posts/recommendations/posts/?limit=4', {
+      // Use algorithmic recommendations for logged-in users, trending posts for non-logged-in users
+      const endpoint = user 
+        ? 'http://127.0.0.1:8000/api/posts/recommendations/posts/?limit=4'
+        : 'http://127.0.0.1:8000/api/posts/trending/?limit=4';
+        
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': token ? `Token ${token}` : undefined,
           'Content-Type': 'application/json',
@@ -76,14 +80,17 @@ const RecommendationsSection = () => {
     navigate('/recommendations');
   };
 
-  if (!user) return null; // Don't show recommendations to non-logged-in users
+  // Show popular posts for non-logged-in users, personalized for logged-in users
+  if (!user && recommendations.length === 0 && !loading) {
+    return null; // Only hide if no content to show
+  }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
           <Sparkles className="w-5 h-5 text-orange-500" />
-          <span>Recommended for You</span>
+          <span>{user ? 'Recommended for You' : 'Popular Posts'}</span>
         </h3>
         <Button 
           variant="ghost" 

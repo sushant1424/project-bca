@@ -139,17 +139,14 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
               </div>
             } />
         
-        {/* Individual post page with sidebar */}
+        {/* Individual post page - clean reading view without navbar but with sidebar */}
         <Route path="/post/:id" element={
           <div className="min-h-screen bg-white">
-            <Navbar onToggleSidebar={onToggleSidebar} sidebarCollapsed={sidebarCollapsed} />
             <div className="flex relative">
               {/* Desktop Sidebar */}
               <div className={`hidden lg:block ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <Sidebar />
               </div>
-              
-
               
               <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <PostDetail />
@@ -292,6 +289,15 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
               
               <main className="flex-1 w-full min-w-0 bg-white lg:border-l border-gray-200">
                 <RecommendationsPage />
+              </main>
+            </div>
+          </div>
+        } />
+        <Route path="/post/:id" element={
+          <div className="min-h-screen bg-white">
+            <div className="flex relative">
+              <main className="flex-1 w-full min-w-0 bg-white">
+                <PostDetail />
               </main>
             </div>
           </div>

@@ -7,13 +7,20 @@ import { useNavigate } from 'react-router-dom';
 
 const UserProfilePopover = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const [open, setOpen] = React.useState(false);
 
   const handleViewProfile = () => {
+    setOpen(false); // Close popover
     navigate(`/profile`); // Navigate to own profile
   };
 
+  const handleLogout = () => {
+    setOpen(false); // Close popover
+    onLogout(); // Call logout function
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
@@ -53,7 +60,7 @@ const UserProfilePopover = ({ user, onLogout }) => {
           <Button
             variant="ghost"
             className="w-full justify-start text-left text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={onLogout}
+            onClick={handleLogout}
           >
             <LogOut className="mr-3 h-4 w-4" />
             Sign Out

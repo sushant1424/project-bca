@@ -163,8 +163,26 @@ def post_detail(request, pk):
         if not request.user.is_authenticated or post.author != request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        post.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            post_id = post.pk
+            post_title = post.title
+            print(f"Attempting to delete post {post_id}: {post_title}")
+            
+            # Simple delete - let Django handle CASCADE
+            post.delete()
+            print(f"Successfully deleted post {post_id}: {post_title}")
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        except Exception as e:
+            print(f"Error deleting post {pk}: {str(e)}")
+            print(f"Exception type: {type(e).__name__}")
+            import traceback
+            print(f"Full traceback: {traceback.format_exc()}")
+            
+            return Response(
+                {'error': 'Failed to delete post', 'details': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 @api_view(['POST'])
 def track_post_view(request, pk):
@@ -646,21 +664,15 @@ def admin_dashboard_stats(request):
         posts_last_month = Post.objects.filter(created_at__gte=last_month).count()
         posts_trend = round((posts_last_month / max(total_posts - posts_last_month, 1)) * 100, 1) if total_posts > posts_last_month else 0
         
-        # Total Views
-        total_views = Post.objects.aggregate(total=models.Sum('views'))['total'] or 0
-        views_last_month = Post.objects.filter(created_at__gte=last_month).aggregate(total=models.Sum('views'))['total'] or 0
-        views_trend = round((views_last_month / max(total_views - views_last_month, 1)) * 100, 1) if total_views > views_last_month else 0
+        # Total Categories
+        total_categories = Category.objects.filter(is_active=True).count()
+        categories_last_month = Category.objects.filter(created_at__gte=last_month).count()
+        categories_trend = round((categories_last_month / max(total_categories - categories_last_month, 1)) * 100, 1) if total_categories > categories_last_month else 0
         
-        # Total Likes
-        total_likes = 0
-        likes_last_month = 0
-        for post in Post.objects.all():
-            post_likes = post.likes.count()
-            total_likes += post_likes
-            if post.created_at >= last_month:
-                likes_last_month += post_likes
-        
-        likes_trend = round((likes_last_month / max(total_likes - likes_last_month, 1)) * 100, 1) if total_likes > likes_last_month else 0
+        # Total Comments
+        total_comments = Comment.objects.count()
+        comments_last_month = Comment.objects.filter(created_at__gte=last_month).count()
+        comments_trend = round((comments_last_month / max(total_comments - comments_last_month, 1)) * 100, 1) if total_comments > comments_last_month else 0
         
         # Recent Users (latest 5)
         recent_users = User.objects.order_by('-date_joined')[:5]
@@ -676,10 +688,10 @@ def admin_dashboard_stats(request):
             'users_trend': users_trend,
             'total_posts': total_posts,
             'posts_trend': posts_trend,
-            'total_views': total_views,
-            'views_trend': views_trend,
-            'total_likes': total_likes,
-            'likes_trend': likes_trend,
+            'total_categories': total_categories,
+            'categories_trend': categories_trend,
+            'total_comments': total_comments,
+            'comments_trend': comments_trend,
             'recent_users': recent_users_data
         }
         

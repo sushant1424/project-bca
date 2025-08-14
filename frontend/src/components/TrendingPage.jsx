@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Clock, Eye, Heart, MessageCircle, User, Sparkles, BarChart3, Flame } from 'lucide-react';
+import { TrendingUp, Clock, Eye, Heart, MessageCircle, User, Sparkles, BarChart3, Flame, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Button } from './ui/button';
@@ -20,6 +20,15 @@ const TrendingPage = () => {
   const { showError, showSuccess } = useToast();
   const { getPostLike, handleLike: globalHandleLike } = useLike();
   const { isFollowing: globalIsFollowing, handleFollow: globalHandleFollow } = useFollow();
+
+  // Handle back navigation
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   useEffect(() => {
     fetchTrendingPosts();
@@ -142,13 +151,20 @@ const TrendingPage = () => {
       <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
+          {/* Back Button */}
+          <div className="mb-6">
+            <button 
+              onClick={handleBack}
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group p-2 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            </button>
+          </div>
+          
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <TrendingUp className="w-8 h-8 text-orange-500 mr-3" />
               <h1 className="text-3xl font-bold text-gray-900">Trending Now</h1>
-            </div>
-            <div className="text-sm text-gray-500">
-              Updated {formatTimeAgo(lastUpdated.toISOString())}
             </div>
           </div>
           <p className="text-gray-600">
@@ -313,15 +329,7 @@ const TrendingPage = () => {
           </div>
         )}
 
-        {/* Footer info */}
-        <div className="text-center mt-8 p-4 bg-white rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">
-            <span className="font-medium">🔥 Trending algorithm:</span> Posts ranked by recent engagement activity
-          </p>
-          <p className="text-xs text-gray-500">
-            Updates automatically every 2 minutes • Last updated {formatTimeAgo(lastUpdated.toISOString())}
-          </p>
-        </div>
+
       </div>
     </div>
   );

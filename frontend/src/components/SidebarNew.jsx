@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BarChart3, Users, BookOpen, Sparkles, TrendingUp, Menu } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Home, PenTool, BarChart3, Users, BookOpen, Sparkles, TrendingUp, Menu, Plus } from 'lucide-react';
 import LogoutModal from './LogoutModal';
+import { useToast } from '../context/ToastContext';
 
 const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const { showWarning } = useToast();
 
   // Check if user is logged in
@@ -48,44 +47,23 @@ const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
   };
 
   return (
-    <>
-      {/* Floating toggle button when sidebar is hidden */}
-      {!isVisible && (
-        <div
-          onClick={() => setIsVisible(true)}
-          className="fixed top-4 left-6 cursor-pointer z-50 p-2"
+    <div className="fixed left-0 top-0 h-screen bg-gray-900 flex flex-col items-center py-4 z-50" style={{ width: '60px' }}>
+      {/* Hamburger Menu Toggle */}
+      <div className="relative group mb-6">
+        <button 
+          className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+          title="Menu"
         >
-          <div className="flex flex-col space-y-1">
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar */}
-      {isVisible && (
-        <div className="fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col items-center py-4 z-50" style={{ width: '80px' }}>
-      {/* Hide Menu Button */}
-      <div className="fixed top-4 left-6 cursor-pointer z-50 p-2 group">
-        <div 
-          onClick={() => setIsVisible(false)}
-          title="Hide"
-        >
-          <div className="flex flex-col space-y-1">
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-            <div className="w-4 h-px bg-gray-600 hover:bg-blue-600 transition-colors"></div>
-          </div>
-        </div>
+          <Menu className="w-5 h-5" />
+        </button>
         {/* Tooltip */}
-        <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-          Hide Menu
+        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+          Menu
         </div>
       </div>
 
-      {/* Navigation Icons - Centered */}
-      <nav className="flex flex-col space-y-4 flex-1 justify-center">
+      {/* Navigation Icons */}
+      <nav className="flex flex-col space-y-2 flex-1">
         {navigationItems.map((item) => {
           const IconComponent = item.icon;
           const isActive = location.pathname === item.path;
@@ -96,8 +74,8 @@ const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
                 onClick={() => handleNavClick(item)}
                 className={`p-3 rounded-lg transition-colors ${
                   isActive 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-orange-500 text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
                 <IconComponent className="w-5 h-5" />
@@ -112,16 +90,29 @@ const Sidebar = ({ isCollapsed, onToggle, onToggleSidebar }) => {
         })}
       </nav>
 
+      {/* Write Button (Plus Icon) */}
+      <div className="relative group">
+        <button
+          onClick={() => handleNavClick({ icon: Plus, label: 'Write', path: '/write', requiresAuth: true })}
+          className="p-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+        
+        {/* Tooltip */}
+        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+          Write
+        </div>
+      </div>
+
       {/* Logout Modal */}
       {showLogoutModal && (
-        <LogoutModal
-          onClose={() => setShowLogoutModal(false)}
+        <LogoutModal 
           onConfirm={handleLogout}
+          onCancel={() => setShowLogoutModal(false)}
         />
       )}
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 

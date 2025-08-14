@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Heart, MessageCircle, User, Calendar, Bookmark, Share2, ArrowLeft } from 'lucide-react';
+import { X, Heart, MessageCircle, User, Calendar, Bookmark, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
@@ -419,16 +419,6 @@ if (!post) {
 
       {/* Main Content Container */}
       <div className="max-w-2xl mx-auto px-6 py-12">
-        {/* Back Button */}
-        <div className="mb-6">
-          <button 
-            onClick={handleBack}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back</span>
-          </button>
-        </div>
         
         {/* Category Tag */}
         {post.category && (

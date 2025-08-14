@@ -54,10 +54,10 @@ class PostAdmin(admin.ModelAdmin):
     """
     Enhanced admin interface for Post model with comprehensive features
     """
-    list_display = ('title', 'author', 'category', 'is_published', 'views', 'like_count', 'comment_count', 'created_at')
+    list_display = ('title', 'author', 'get_categories', 'is_published', 'views', 'like_count', 'comment_count', 'created_at')
     list_filter = ('is_published', 'category', 'created_at', 'updated_at', 'author')
     search_fields = ('title', 'content', 'excerpt', 'author__username', 'author__email')
-    list_editable = ('is_published', 'category')
+    list_editable = ('is_published',)
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     list_per_page = 20
@@ -83,7 +83,7 @@ class PostAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('title', 'author', 'category')
+            'fields': ('title', 'author', 'category', 'categories')
         }),
         ('Content', {
             'fields': ('content', 'excerpt', 'image')
@@ -111,6 +111,16 @@ class PostAdmin(admin.ModelAdmin):
     def comment_count(self, obj):
         return obj.comment_count()
     comment_count.short_description = 'Comments'
+    
+    def get_categories(self, obj):
+        """Display all categories for this post"""
+        categories = obj.categories.all()
+        if categories:
+            return ", ".join([cat.name for cat in categories])
+        elif obj.category:
+            return obj.category.name
+        return "Uncategorized"
+    get_categories.short_description = 'Categories'
 
 
 @admin.register(Comment)

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, TrendingUp, BarChart3, Users, UserCheck, Loader2, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import AuthModal from './AuthModal';
 import { useNavigate } from 'react-router-dom';
 import Post from './Post';
 import { ToastContainer } from './ToastNotification';
@@ -27,6 +28,8 @@ const FollowingPage = () => {
   const [followedUsersScrollPosition, setFollowedUsersScrollPosition] = useState(0);
   const [followedUsers, setFollowedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
 
   const { toasts, showSuccess, removeToast } = useToast();
 
@@ -42,6 +45,17 @@ const FollowingPage = () => {
   // Handle post click to navigate to post detail
   const handlePostClick = (postId) => {
     navigate(`/post/${postId}`);
+  };
+
+  // Handle login button click
+  const handleLoginClick = () => {
+    setAuthMode('login');
+    setAuthModalOpen(true);
+  };
+
+  // Handle auth modal close
+  const handleAuthModalClose = () => {
+    setAuthModalOpen(false);
   };
 
   useEffect(() => {
@@ -295,10 +309,10 @@ const FollowingPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Following Feed</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <button
-              onClick={fetchFollowingPosts}
+              onClick={handleLoginClick}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Try Again
+              Sign In
             </button>
           </div>
         </div>
@@ -308,17 +322,16 @@ const FollowingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           {/* Back Button */}
           <div className="mb-6">
             <button 
               onClick={handleBack}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors group"
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group p-2 rounded-full hover:bg-gray-100"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-medium">Back</span>
             </button>
           </div>
           
@@ -434,7 +447,7 @@ const FollowingPage = () => {
           </div>
         ) : (
           <>
-            <div className="space-y-6 mb-8">
+            <div className="space-y-4 mb-8">
               {currentPosts.map((post) => (
                 <Post
                   key={post.id}
@@ -473,6 +486,13 @@ const FollowingPage = () => {
         )}
 
         <ToastContainer toasts={toasts} removeToast={removeToast} />
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={authModalOpen} 
+          onClose={handleAuthModalClose} 
+          mode={authMode} 
+        />
       </div>
     </div>
   );

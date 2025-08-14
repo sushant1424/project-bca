@@ -33,6 +33,25 @@ const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+
+    // Listen for login events to update navbar without page reload
+    const handleUserLoggedIn = (event) => {
+      setUser(event.detail.user);
+    };
+
+    // Listen for auth modal open events from child components
+    const handleOpenAuthModal = (event) => {
+      setAuthMode(event.detail.mode || 'login');
+      setShowAuthModal(true);
+    };
+
+    window.addEventListener('userLoggedIn', handleUserLoggedIn);
+    window.addEventListener('openAuthModal', handleOpenAuthModal);
+
+    return () => {
+      window.removeEventListener('userLoggedIn', handleUserLoggedIn);
+      window.removeEventListener('openAuthModal', handleOpenAuthModal);
+    };
   }, []);
 
   // Hide navbar on dashboard and write page (after all hooks are declared)
@@ -110,30 +129,26 @@ const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
   return (
     <>
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0">
           <div className="flex justify-between items-center h-16">
-            {/* Hamburger Menu and Logo - Left side */}
-            <div className="flex items-center space-x-3 flex-shrink-0">
-              {/* Hamburger Menu Button */}
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                aria-label="Toggle sidebar"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              
+            {/* Logo - Left side */}
+            <div className="flex items-center flex-shrink-0">
               {/* Logo */}
               <button 
                 onClick={() => navigate('/')}
-                className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+                className="flex items-center text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
               >
+                <img 
+                  src="/favicon.svg" 
+                  alt="Wrytera Logo" 
+                  className="w-8 h-8 mr-2"
+                />
                 Wrytera
               </button>
             </div>
 
-            {/* Search Bar - Center (hidden on Library, Admin, Following, and Trending pages) */}
-            {location.pathname !== '/library' && location.pathname !== '/admin' && location.pathname !== '/following' && location.pathname !== '/trending' && (
+            {/* Search Bar - Center (hidden on Library, Admin, Following, Trending, and Recommendations pages) */}
+            {location.pathname !== '/library' && location.pathname !== '/admin' && location.pathname !== '/following' && location.pathname !== '/trending' && location.pathname !== '/recommendations' && (
               <div className="hidden md:block flex-1 max-w-lg mx-8">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -192,7 +207,11 @@ const Navbar = ({ onSearch, onToggleSidebar, sidebarCollapsed }) => {
                 {isMenuOpen ? (
                   <X className="w-5 h-5" />
                 ) : (
-                  <Menu className="w-5 h-5" />
+                  <div className="w-5 h-5 flex flex-col justify-center space-y-1">
+                    <div className="w-full h-0.5 bg-gray-600 rounded-sm"></div>
+                    <div className="w-full h-0.5 bg-gray-600 rounded-sm"></div>
+                    <div className="w-full h-0.5 bg-gray-600 rounded-sm"></div>
+                  </div>
                 )}
               </button>
             </div>

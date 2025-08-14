@@ -89,7 +89,7 @@ const ImageInsertDialog = ({ isOpen, onClose, onInsert }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-purple-600" />
@@ -211,7 +211,7 @@ const ImageInsertDialog = ({ isOpen, onClose, onInsert }) => {
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="max-w-full h-auto max-h-64 mx-auto rounded-lg shadow-sm"
+                  className="max-w-full h-auto max-h-40 mx-auto rounded-lg shadow-sm"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     setPreviewUrl('');

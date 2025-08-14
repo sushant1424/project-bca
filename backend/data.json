@@ -1,0 +1,1758 @@
+[
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "admin",
+        "model": "logentry"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "auth",
+        "model": "permission"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "auth",
+        "model": "group"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "sessions",
+        "model": "session"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "authtoken",
+        "model": "token"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "authtoken",
+        "model": "tokenproxy"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "authentication",
+        "model": "user"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "post"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "comment"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "follow"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "repost"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "category"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "savedpost"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "postview"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "tip"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "writinggoal"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "collaborativepost"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "premiumaccess"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "readermood"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "usersubscription"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "notification"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "userinteraction"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "usersimilarity"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "postrecommendation"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "posts",
+        "model": "userrecommendation"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 1,
+    "fields": {
+        "name": "Technology",
+        "slug": "technology",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:18:32.517Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 2,
+    "fields": {
+        "name": "Sports",
+        "slug": "sports",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:44:05.578Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 3,
+    "fields": {
+        "name": "Culture",
+        "slug": "culture",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:44:19.927Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 4,
+    "fields": {
+        "name": "Language",
+        "slug": "language",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:44:56.542Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 5,
+    "fields": {
+        "name": "Fashion",
+        "slug": "fashion",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:45:08.219Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 6,
+    "fields": {
+        "name": "Health",
+        "slug": "health",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:45:12.015Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 7,
+    "fields": {
+        "name": "Food",
+        "slug": "food",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T12:45:15.302Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 8,
+    "fields": {
+        "name": "Astronomy",
+        "slug": "astronomy",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:04:24.049Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 9,
+    "fields": {
+        "name": "Education",
+        "slug": "education",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:05:41.054Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 10,
+    "fields": {
+        "name": "Photography",
+        "slug": "photography",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:05:59.891Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 11,
+    "fields": {
+        "name": "Film and TV",
+        "slug": "film-and-tv",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:06:12.017Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 12,
+    "fields": {
+        "name": "Politics",
+        "slug": "politics",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:06:21.693Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 13,
+    "fields": {
+        "name": "Humor and Satire",
+        "slug": "humor-and-satire",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:06:32.117Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 14,
+    "fields": {
+        "name": "Book",
+        "slug": "book",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:12:19.037Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 15,
+    "fields": {
+        "name": "Movie",
+        "slug": "movie",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:12:25.413Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 16,
+    "fields": {
+        "name": "Psychology and Human Behavior",
+        "slug": "psychology-and-human-behavior",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:12:44.996Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 17,
+    "fields": {
+        "name": "Religion and Spirituality",
+        "slug": "religion-and-spirituality",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:12:56.773Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 19,
+    "fields": {
+        "name": "Design",
+        "slug": "design",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-09T13:29:45.894Z"
+    }
+},
+{
+    "model": "posts.category",
+    "pk": 20,
+    "fields": {
+        "name": "Travel",
+        "slug": "travel",
+        "description": "",
+        "color": "#6B7280",
+        "is_active": true,
+        "created_at": "2025-08-12T09:45:32.019Z"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "add_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "change_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "delete_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "view_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "add_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "change_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "delete_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "view_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "add_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "change_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "delete_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "view_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "add_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "change_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "delete_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "view_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "add_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "change_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "delete_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "view_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add Token",
+        "content_type": [
+            "authtoken",
+            "token"
+        ],
+        "codename": "add_token"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change Token",
+        "content_type": [
+            "authtoken",
+            "token"
+        ],
+        "codename": "change_token"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete Token",
+        "content_type": [
+            "authtoken",
+            "token"
+        ],
+        "codename": "delete_token"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view Token",
+        "content_type": [
+            "authtoken",
+            "token"
+        ],
+        "codename": "view_token"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add token",
+        "content_type": [
+            "authtoken",
+            "tokenproxy"
+        ],
+        "codename": "add_tokenproxy"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change token",
+        "content_type": [
+            "authtoken",
+            "tokenproxy"
+        ],
+        "codename": "change_tokenproxy"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete token",
+        "content_type": [
+            "authtoken",
+            "tokenproxy"
+        ],
+        "codename": "delete_tokenproxy"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view token",
+        "content_type": [
+            "authtoken",
+            "tokenproxy"
+        ],
+        "codename": "view_tokenproxy"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add User",
+        "content_type": [
+            "authentication",
+            "user"
+        ],
+        "codename": "add_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change User",
+        "content_type": [
+            "authentication",
+            "user"
+        ],
+        "codename": "change_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete User",
+        "content_type": [
+            "authentication",
+            "user"
+        ],
+        "codename": "delete_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view User",
+        "content_type": [
+            "authentication",
+            "user"
+        ],
+        "codename": "view_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add post",
+        "content_type": [
+            "posts",
+            "post"
+        ],
+        "codename": "add_post"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change post",
+        "content_type": [
+            "posts",
+            "post"
+        ],
+        "codename": "change_post"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete post",
+        "content_type": [
+            "posts",
+            "post"
+        ],
+        "codename": "delete_post"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view post",
+        "content_type": [
+            "posts",
+            "post"
+        ],
+        "codename": "view_post"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add comment",
+        "content_type": [
+            "posts",
+            "comment"
+        ],
+        "codename": "add_comment"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change comment",
+        "content_type": [
+            "posts",
+            "comment"
+        ],
+        "codename": "change_comment"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete comment",
+        "content_type": [
+            "posts",
+            "comment"
+        ],
+        "codename": "delete_comment"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view comment",
+        "content_type": [
+            "posts",
+            "comment"
+        ],
+        "codename": "view_comment"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add follow",
+        "content_type": [
+            "posts",
+            "follow"
+        ],
+        "codename": "add_follow"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change follow",
+        "content_type": [
+            "posts",
+            "follow"
+        ],
+        "codename": "change_follow"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete follow",
+        "content_type": [
+            "posts",
+            "follow"
+        ],
+        "codename": "delete_follow"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view follow",
+        "content_type": [
+            "posts",
+            "follow"
+        ],
+        "codename": "view_follow"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add repost",
+        "content_type": [
+            "posts",
+            "repost"
+        ],
+        "codename": "add_repost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change repost",
+        "content_type": [
+            "posts",
+            "repost"
+        ],
+        "codename": "change_repost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete repost",
+        "content_type": [
+            "posts",
+            "repost"
+        ],
+        "codename": "delete_repost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view repost",
+        "content_type": [
+            "posts",
+            "repost"
+        ],
+        "codename": "view_repost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add category",
+        "content_type": [
+            "posts",
+            "category"
+        ],
+        "codename": "add_category"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change category",
+        "content_type": [
+            "posts",
+            "category"
+        ],
+        "codename": "change_category"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete category",
+        "content_type": [
+            "posts",
+            "category"
+        ],
+        "codename": "delete_category"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view category",
+        "content_type": [
+            "posts",
+            "category"
+        ],
+        "codename": "view_category"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add saved post",
+        "content_type": [
+            "posts",
+            "savedpost"
+        ],
+        "codename": "add_savedpost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change saved post",
+        "content_type": [
+            "posts",
+            "savedpost"
+        ],
+        "codename": "change_savedpost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete saved post",
+        "content_type": [
+            "posts",
+            "savedpost"
+        ],
+        "codename": "delete_savedpost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view saved post",
+        "content_type": [
+            "posts",
+            "savedpost"
+        ],
+        "codename": "view_savedpost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add post view",
+        "content_type": [
+            "posts",
+            "postview"
+        ],
+        "codename": "add_postview"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change post view",
+        "content_type": [
+            "posts",
+            "postview"
+        ],
+        "codename": "change_postview"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete post view",
+        "content_type": [
+            "posts",
+            "postview"
+        ],
+        "codename": "delete_postview"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view post view",
+        "content_type": [
+            "posts",
+            "postview"
+        ],
+        "codename": "view_postview"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add tip",
+        "content_type": [
+            "posts",
+            "tip"
+        ],
+        "codename": "add_tip"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change tip",
+        "content_type": [
+            "posts",
+            "tip"
+        ],
+        "codename": "change_tip"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete tip",
+        "content_type": [
+            "posts",
+            "tip"
+        ],
+        "codename": "delete_tip"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view tip",
+        "content_type": [
+            "posts",
+            "tip"
+        ],
+        "codename": "view_tip"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add writing goal",
+        "content_type": [
+            "posts",
+            "writinggoal"
+        ],
+        "codename": "add_writinggoal"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change writing goal",
+        "content_type": [
+            "posts",
+            "writinggoal"
+        ],
+        "codename": "change_writinggoal"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete writing goal",
+        "content_type": [
+            "posts",
+            "writinggoal"
+        ],
+        "codename": "delete_writinggoal"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view writing goal",
+        "content_type": [
+            "posts",
+            "writinggoal"
+        ],
+        "codename": "view_writinggoal"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add collaborative post",
+        "content_type": [
+            "posts",
+            "collaborativepost"
+        ],
+        "codename": "add_collaborativepost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change collaborative post",
+        "content_type": [
+            "posts",
+            "collaborativepost"
+        ],
+        "codename": "change_collaborativepost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete collaborative post",
+        "content_type": [
+            "posts",
+            "collaborativepost"
+        ],
+        "codename": "delete_collaborativepost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view collaborative post",
+        "content_type": [
+            "posts",
+            "collaborativepost"
+        ],
+        "codename": "view_collaborativepost"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add premium access",
+        "content_type": [
+            "posts",
+            "premiumaccess"
+        ],
+        "codename": "add_premiumaccess"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change premium access",
+        "content_type": [
+            "posts",
+            "premiumaccess"
+        ],
+        "codename": "change_premiumaccess"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete premium access",
+        "content_type": [
+            "posts",
+            "premiumaccess"
+        ],
+        "codename": "delete_premiumaccess"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view premium access",
+        "content_type": [
+            "posts",
+            "premiumaccess"
+        ],
+        "codename": "view_premiumaccess"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add reader mood",
+        "content_type": [
+            "posts",
+            "readermood"
+        ],
+        "codename": "add_readermood"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change reader mood",
+        "content_type": [
+            "posts",
+            "readermood"
+        ],
+        "codename": "change_readermood"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete reader mood",
+        "content_type": [
+            "posts",
+            "readermood"
+        ],
+        "codename": "delete_readermood"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view reader mood",
+        "content_type": [
+            "posts",
+            "readermood"
+        ],
+        "codename": "view_readermood"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user subscription",
+        "content_type": [
+            "posts",
+            "usersubscription"
+        ],
+        "codename": "add_usersubscription"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user subscription",
+        "content_type": [
+            "posts",
+            "usersubscription"
+        ],
+        "codename": "change_usersubscription"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user subscription",
+        "content_type": [
+            "posts",
+            "usersubscription"
+        ],
+        "codename": "delete_usersubscription"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view user subscription",
+        "content_type": [
+            "posts",
+            "usersubscription"
+        ],
+        "codename": "view_usersubscription"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add notification",
+        "content_type": [
+            "posts",
+            "notification"
+        ],
+        "codename": "add_notification"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change notification",
+        "content_type": [
+            "posts",
+            "notification"
+        ],
+        "codename": "change_notification"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete notification",
+        "content_type": [
+            "posts",
+            "notification"
+        ],
+        "codename": "delete_notification"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view notification",
+        "content_type": [
+            "posts",
+            "notification"
+        ],
+        "codename": "view_notification"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user interaction",
+        "content_type": [
+            "posts",
+            "userinteraction"
+        ],
+        "codename": "add_userinteraction"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user interaction",
+        "content_type": [
+            "posts",
+            "userinteraction"
+        ],
+        "codename": "change_userinteraction"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user interaction",
+        "content_type": [
+            "posts",
+            "userinteraction"
+        ],
+        "codename": "delete_userinteraction"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view user interaction",
+        "content_type": [
+            "posts",
+            "userinteraction"
+        ],
+        "codename": "view_userinteraction"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user similarity",
+        "content_type": [
+            "posts",
+            "usersimilarity"
+        ],
+        "codename": "add_usersimilarity"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user similarity",
+        "content_type": [
+            "posts",
+            "usersimilarity"
+        ],
+        "codename": "change_usersimilarity"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user similarity",
+        "content_type": [
+            "posts",
+            "usersimilarity"
+        ],
+        "codename": "delete_usersimilarity"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view user similarity",
+        "content_type": [
+            "posts",
+            "usersimilarity"
+        ],
+        "codename": "view_usersimilarity"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add post recommendation",
+        "content_type": [
+            "posts",
+            "postrecommendation"
+        ],
+        "codename": "add_postrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change post recommendation",
+        "content_type": [
+            "posts",
+            "postrecommendation"
+        ],
+        "codename": "change_postrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete post recommendation",
+        "content_type": [
+            "posts",
+            "postrecommendation"
+        ],
+        "codename": "delete_postrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view post recommendation",
+        "content_type": [
+            "posts",
+            "postrecommendation"
+        ],
+        "codename": "view_postrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user recommendation",
+        "content_type": [
+            "posts",
+            "userrecommendation"
+        ],
+        "codename": "add_userrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user recommendation",
+        "content_type": [
+            "posts",
+            "userrecommendation"
+        ],
+        "codename": "change_userrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user recommendation",
+        "content_type": [
+            "posts",
+            "userrecommendation"
+        ],
+        "codename": "delete_userrecommendation"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can view user recommendation",
+        "content_type": [
+            "posts",
+            "userrecommendation"
+        ],
+        "codename": "view_userrecommendation"
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$GveU0xtkkb1FJUvWB0EQAF$kR/uh6YCk4cZ3oP/UUSNYPEX84/fmEsDGTWzC7I24tQ=",
+        "last_login": null,
+        "is_superuser": false,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-08-09T12:17:31.381Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T12:17:32.047Z",
+        "updated_at": "2025-08-09T12:17:32.047Z",
+        "email": "test@example.com",
+        "username": "testuser",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "!WqEh5GjLUirbpo8FsMgORo9CXHE1HukgtpxcEft7",
+        "last_login": null,
+        "is_superuser": true,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-08-09T12:29:21.983Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T12:29:21.984Z",
+        "updated_at": "2025-08-09T12:29:21.984Z",
+        "email": "demo@example.com",
+        "username": "demo_user",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$5akGKNmHqf8QnMbjSCMOyC$DBZcyqJYInKPpv2VN3ftmGSQfOjhPXrSbukacfZ7XeU=",
+        "last_login": null,
+        "is_superuser": false,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-08-09T12:42:51.954Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T12:42:52.748Z",
+        "updated_at": "2025-08-09T12:42:52.748Z",
+        "email": "sushantshrestha184@gmail.com",
+        "username": "Sushant",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$Mi8Ltp2GH7Fq4YGNsDQWYd$Tvm2tuqFD/meiHgFY2OoT748qfczoOElzIDUgAFQsPU=",
+        "last_login": null,
+        "is_superuser": true,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-08-09T12:43:43.100Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T12:43:44.022Z",
+        "updated_at": "2025-08-09T12:43:44.022Z",
+        "email": "admin11@gmail.com",
+        "username": "admin",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$C2YqylQLj2dEO0x0N0gm28$VD2HO5/JpmJIUnCABmJJ5euMAI0sPn75QlePtnvE0N4=",
+        "last_login": null,
+        "is_superuser": false,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-08-09T13:16:11.987Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T13:16:12.554Z",
+        "updated_at": "2025-08-09T13:16:12.554Z",
+        "email": "bisakha11@gmail.com",
+        "username": "Bisakha",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$OYm5HC5NzLyTMDAqVFvdfe$qKd2tJyRwA0kpH/kZAIf2nh9geVCEgo1KvSMIV58kGk=",
+        "last_login": null,
+        "is_superuser": false,
+        "first_name": "Saisha",
+        "last_name": "Shrestha",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-08-09T13:16:34.356Z",
+        "bio": "I am from Nepal",
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-09T13:16:34.939Z",
+        "updated_at": "2025-08-10T08:15:11.843Z",
+        "email": "saisha11@gmail.com",
+        "username": "Saisha",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "authentication.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$JWTTEmmbdsOxkIiSAPRDPh$pXKHha5/MPd2/b7KYSG79V3DAGFJCAa5jMtOiIloSnc=",
+        "last_login": null,
+        "is_superuser": true,
+        "first_name": "",
+        "last_name": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-08-12T06:05:54.711Z",
+        "bio": null,
+        "avatar": null,
+        "profile_image": "",
+        "date_of_birth": null,
+        "phone_number": null,
+        "website": null,
+        "twitter": null,
+        "linkedin": null,
+        "reset_token": null,
+        "reset_token_expires": null,
+        "created_at": "2025-08-12T06:05:55.309Z",
+        "updated_at": "2025-08-12T06:05:55.309Z",
+        "email": "admin1@gmail.com",
+        "username": "admin1",
+        "groups": [],
+        "user_permissions": []
+    }
+}

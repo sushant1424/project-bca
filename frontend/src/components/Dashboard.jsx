@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { 
   X, Home, FileText, BarChart3, Users, Settings, 
   TrendingUp, Eye, Heart, BookOpen, Search, Calendar, Clock,
@@ -11,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import UnauthorizedAlert from './UnauthorizedAlert';
 import { useLike } from '../contexts/LikeContext';
 import { useAnalytics } from '../contexts/AnalyticsContext';
+import { useToast } from '../context/ToastContext';
 
 // MyPostsSection Component
 const MyPostsSection = ({ navigate, user }) => {
@@ -25,6 +27,7 @@ const MyPostsSection = ({ navigate, user }) => {
   const postsPerPage = 6;
   const { initializePostLikes, getPostLike } = useLike();
   const { getPostStats } = useAnalytics();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchUserPosts();
@@ -117,12 +120,26 @@ const MyPostsSection = ({ navigate, user }) => {
 
   const handleDeletePost = async (e, postId) => {
     e.stopPropagation(); // Prevent card click
+    console.log('Delete button clicked for post ID:', postId);
+    console.log('Post ID type:', typeof postId);
+    if (!postId) {
+      console.error('Post ID is undefined or null!');
+      showError('Error', 'Unable to delete post - invalid post ID');
+      return;
+    }
     setDeleteConfirm(postId);
   };
 
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        showError('Authentication Error', 'Please log in to delete posts.');
+        setDeleteConfirm(null);
+        return;
+      }
+
       const response = await fetch(`http://127.0.0.1:8000/api/posts/${deleteConfirm}/`, {
         method: 'DELETE',
         headers: {
@@ -136,15 +153,25 @@ const MyPostsSection = ({ navigate, user }) => {
         setPosts(posts.filter(post => post.id !== deleteConfirm));
         setDeleteConfirm(null);
         
-        // Show success message
-        alert('Post deleted successfully!');
+        // Show success toast
+        showSuccess('Post Deleted', 'Your post has been successfully deleted.');
       } else {
-        console.error('Failed to delete post');
-        alert('Failed to delete post. Please try again.');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to delete post:', response.status, errorData);
+        
+        if (response.status === 403) {
+          showError('Permission Denied', 'You do not have permission to delete this post.');
+        } else if (response.status === 404) {
+          showError('Post Not Found', 'The post you are trying to delete no longer exists.');
+        } else {
+          showError('Delete Failed', 'Failed to delete post. Please try again.');
+        }
+        setDeleteConfirm(null);
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Error deleting post. Please try again.');
+      showError('Network Error', 'Unable to delete post. Please check your connection and try again.');
+      setDeleteConfirm(null);
     }
   };
 
@@ -343,24 +370,36 @@ const MyPostsSection = ({ navigate, user }) => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">Delete Post</h3>
-            <p className="text-gray-600 mb-4">
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center">
+              <Trash2 className="w-6 h-6 text-red-500 mr-2" />
+              Delete Post
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-600">
               Are you sure you want to delete this post? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={cancelDelete}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={confirmDelete}>
-                Delete
-              </Button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex space-x-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={cancelDelete}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Pagination */}
       {totalPages > 1 && (

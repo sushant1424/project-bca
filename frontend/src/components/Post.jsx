@@ -31,6 +31,37 @@ const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
   // Get follow status from global context
   const isFollowing = globalIsFollowing(post.author?.id);
 
+  // Extract first image from post content
+  const extractFirstImage = (content) => {
+    if (!content) return null;
+    
+    // Try to find img tags in the content
+    const imgRegex = /<img[^>]+src="([^">]+)"/i;
+    const match = content.match(imgRegex);
+    
+    if (match && match[1]) {
+      return match[1];
+    }
+    
+    // Try to find markdown images
+    const markdownImgRegex = /!\[.*?\]\(([^)]+)\)/;
+    const markdownMatch = content.match(markdownImgRegex);
+    
+    if (markdownMatch && markdownMatch[1]) {
+      return markdownMatch[1];
+    }
+    
+    return null;
+  };
+
+  // Get cover image - prioritize post.image, then extract from content
+  const getCoverImage = () => {
+    if (post.image && post.image.trim()) {
+      return post.image;
+    }
+    return extractFirstImage(post.content);
+  };
+
   // Sync saved state when post data changes from parent
   useEffect(() => {
     setIsSaved(post.is_saved || false);
@@ -259,7 +290,7 @@ const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
         </div>
 
         {/* Content with Medium-style layout */}
-        <div className="cursor-pointer mb-6 flex items-start gap-6" onClick={() => onPostClick && onPostClick(post.id)}>
+        <div className="cursor-pointer mb-6 flex items-start gap-6" onClick={handlePostClick}>
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors leading-tight" style={{fontFamily: 'medium-content-sans-serif-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
@@ -300,33 +331,31 @@ const Post = ({ post, onLike, onFollow, onComment, onSave, onPostClick }) => {
             </div>
           </div>
           
-          {/* Large image on right side (Medium-style) - Only show if post has image */}
-          {post.image && post.image.trim() && (
-            <div className="w-40 h-28 md:w-44 md:h-32 flex-shrink-0 ml-6">
-              <img 
-                src={post.image} 
-                alt={post.title || 'Post image'}
-                className="w-full h-full object-cover rounded-lg shadow-sm bg-gray-100"
-                onError={(e) => {
-                  console.log('Image failed to load:', post.image);
-                  // Hide the image container if image fails to load
-                  e.target.parentElement.style.display = 'none';
-                }}
-                onLoad={(e) => {
-                  console.log('Image loaded successfully:', post.image);
-                }}
-              />
-              {post.image_credit && (
-                <p className="text-xs text-gray-400 mt-2 text-center truncate">
-                  {post.image_credit}
-                </p>
-              )}
-            </div>
-          )}
+          {/* Medium-sized image on right side - Show if post has image or content has images */}
+          {(() => {
+            const coverImage = getCoverImage();
+            return coverImage ? (
+              <div className="w-40 h-28 md:w-44 md:h-32 flex-shrink-0 ml-4">
+                <img 
+                  src={coverImage} 
+                  alt={post.title || 'Post image'}
+                  className="w-full h-full object-cover rounded-md shadow-sm bg-gray-100 hover:shadow-md transition-shadow"
+                  onError={(e) => {
+                    console.log('Image failed to load:', coverImage);
+                    // Hide the image container if image fails to load
+                    e.target.parentElement.style.display = 'none';
+                  }}
+                  onLoad={(e) => {
+                    console.log('Image loaded successfully:', coverImage);
+                  }}
+                />
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-3 mt-2 border-t border-gray-100">
           <div className="flex items-center space-x-4">
             <button
               onClick={handleLike}

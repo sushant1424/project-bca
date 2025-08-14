@@ -12,7 +12,7 @@ const HomePage = ({
   searchResults, 
   isSearching 
 }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
 
@@ -74,24 +74,25 @@ const HomePage = ({
       />
       
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-12">
-          {/* Left Side - Main Posts Feed */}
-          <div className="flex-1 max-w-3xl">
-            <PostList
+      <div className="max-w-7xl mx-auto px-0 py-8">
+        <div className="flex gap-4">
+          {/* Main Content - Centered */}
+          <div className="flex-1 max-w-2xl mx-auto">
+            <PostList 
               selectedCategory={selectedCategory}
               searchQuery={searchQuery}
               searchResults={searchResults}
               isSearching={isSearching}
             />
           </div>
-          
           {/* Right Sidebar - Recommendations */}
-          <div className="hidden lg:block w-80 space-y-6">
-            {/* Post Recommendations */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <RecommendationsSection />
-            </div>
+          <div className="hidden lg:block w-80 flex-shrink-0 space-y-6">
+            {/* Post Recommendations - Only for logged-in users */}
+            {user && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <RecommendationsSection />
+              </div>
+            )}
             
             {/* Trending Topics */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, Search, User, Menu } from 'lucide-react';
+import { Bookmark, Search, User, Menu, ArrowLeft } from 'lucide-react';
 import Post from './Post';
 import { ToastContainer } from './ToastNotification';
 import useToast from '../hooks/useToast';
@@ -25,9 +25,16 @@ const LibraryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage] = useState(8);
-  const { toasts, showWarning, showSuccess, removeToast } = useToast();
-  
+  const { toasts, showSuccess, removeToast } = useToast();
 
+  // Handle back navigation
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   useEffect(() => {
     fetchLibraryPosts();
@@ -250,9 +257,19 @@ const LibraryPage = () => {
   return (
     <div className="bg-white">
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-2xl mx-auto px-6 py-8">
         {/* Page Header with Title and Search */}
         <div className="mb-8">
+          {/* Back Button */}
+          <div className="mb-6">
+            <button 
+              onClick={handleBack}
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group p-2 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            </button>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Bookmark className="w-7 h-7 text-gray-900" />
@@ -314,7 +331,7 @@ const LibraryPage = () => {
         ) : (
           <div className="space-y-8">
             {/* Posts Grid */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {currentPosts.map((post) => (
                 <Post
                   key={post.id}

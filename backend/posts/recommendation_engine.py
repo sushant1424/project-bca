@@ -20,16 +20,14 @@ class RecommendationEngine:
     
     def __init__(self, user=None):
         self.user = user
+        # Using only collaborative filtering
         self.weights = {
-            'collaborative': 0.4,
-            'content_based': 0.3,
-            'trending': 0.2,
-            'social': 0.1
+            'collaborative': 1.0  # 100% collaborative filtering
         }
     
     def get_user_recommendations(self, limit=12):
         """
-        Get personalized user recommendations based on multiple factors
+        Get personalized user recommendations using collaborative filtering only
         """
         if not self.user:
             return self._get_popular_users(limit)
@@ -41,28 +39,14 @@ class RecommendationEngine:
         )
         following_ids.add(self.user.id)  # Exclude self
         
-        # Combine different recommendation strategies
+        # Use only collaborative filtering
         collaborative_users = self._collaborative_user_filtering()
-        content_based_users = self._content_based_user_filtering()
-        social_users = self._social_network_users()
         
-        # Score and rank users
-        user_scores = defaultdict(float)
-        
-        # Add collaborative filtering scores
+        # Score and rank users using collaborative filtering only
+        user_scores = {}
         for user_id, score in collaborative_users.items():
             if user_id not in following_ids:
-                user_scores[user_id] += score * self.weights['collaborative']
-        
-        # Add content-based scores
-        for user_id, score in content_based_users.items():
-            if user_id not in following_ids:
-                user_scores[user_id] += score * self.weights['content_based']
-        
-        # Add social network scores
-        for user_id, score in social_users.items():
-            if user_id not in following_ids:
-                user_scores[user_id] += score * self.weights['social']
+                user_scores[user_id] = score  # Pure collaborative filtering score
         
         # Sort by score and get top recommendations
         sorted_users = sorted(user_scores.items(), key=lambda x: x[1], reverse=True)
@@ -77,13 +61,10 @@ class RecommendationEngine:
     
     def get_post_recommendations(self, limit=12):
         """
-        Get personalized post recommendations
+        Get personalized post recommendations using collaborative filtering only
         """
         if not self.user:
             return self._get_trending_posts(limit)
-        
-        # Get posts from users we're following
-        following_ids = Follow.objects.filter(follower=self.user).values_list('following_id', flat=True)
         
         # Get posts user has already interacted with
         interacted_post_ids = set()
@@ -97,28 +78,14 @@ class RecommendationEngine:
             Comment.objects.filter(author=self.user).values_list('post_id', flat=True)
         )
         
-        # Combine different recommendation strategies
+        # Use only collaborative filtering for posts
         collaborative_posts = self._collaborative_post_filtering()
-        content_based_posts = self._content_based_post_filtering()
-        trending_posts = self._get_trending_posts_dict()
         
-        # Score and rank posts
-        post_scores = defaultdict(float)
-        
-        # Add collaborative filtering scores
+        # Score and rank posts using collaborative filtering only
+        post_scores = {}
         for post_id, score in collaborative_posts.items():
             if post_id not in interacted_post_ids:
-                post_scores[post_id] += score * self.weights['collaborative']
-        
-        # Add content-based scores
-        for post_id, score in content_based_posts.items():
-            if post_id not in interacted_post_ids:
-                post_scores[post_id] += score * self.weights['content_based']
-        
-        # Add trending scores
-        for post_id, score in trending_posts.items():
-            if post_id not in interacted_post_ids:
-                post_scores[post_id] += score * self.weights['trending']
+                post_scores[post_id] = score  # Pure collaborative filtering score
         
         # Sort by score and get top recommendations
         sorted_posts = sorted(post_scores.items(), key=lambda x: x[1], reverse=True)
@@ -337,44 +304,135 @@ class RecommendationEngine:
     
     def get_trending_topics(self, limit=10):
         """
-        Get trending topics/categories based on recent activity
+        Get trending topics/categories based on REAL engagement data using sophisticated algorithm
+        Uses Time Delay Weighted Engagement with exponential decay for recency bias
         """
-        # Get categories with recent activity
-        recent_cutoff = timezone.now() - timedelta(days=7)
+        from django.db.models import Sum, Avg, Max
+        import math
         
-        trending_categories = Category.objects.annotate(
-            recent_posts=Count('posts', filter=Q(posts__created_at__gte=recent_cutoff)),
-            recent_likes=Count('posts__likes', filter=Q(posts__created_at__gte=recent_cutoff)),
-            recent_comments=Count('posts__comments', filter=Q(posts__created_at__gte=recent_cutoff)),
-            recent_views=Count('posts__post_views', filter=Q(posts__created_at__gte=recent_cutoff))
-        ).filter(
-            recent_posts__gt=0
-        )
+        # Multi-timeframe analysis for comprehensive trending detection
+        now = timezone.now()
+        timeframes = {
+            'recent': now - timedelta(days=3),    # Very recent activity
+            'weekly': now - timedelta(days=7),    # Weekly trends  
+            'monthly': now - timedelta(days=30),  # Monthly patterns
+            'all_time': now - timedelta(days=365) # Historical baseline
+        }
         
-        # Calculate trending scores
-        categories_with_scores = []
-        for category in trending_categories:
-            # Weighted score based on different engagement types
-            score = (
-                category.recent_posts * 5 +
-                category.recent_likes * 3 +
-                category.recent_comments * 4 +
-                category.recent_views * 0.1
+        # Get all categories with any posts
+        all_categories = Category.objects.filter(posts__isnull=False).distinct()
+        
+        trending_data = []
+        
+        for category in all_categories:
+            category_posts = category.posts.filter(is_published=True)
+            
+            if not category_posts.exists():
+                continue
+                
+            # Calculate engagement metrics for different timeframes
+            metrics = {}
+            
+            for period, cutoff in timeframes.items():
+                period_posts = category_posts.filter(created_at__gte=cutoff)
+                
+                # Real engagement calculations
+                total_likes = sum(post.likes.count() for post in period_posts)
+                total_comments = sum(post.comments.count() for post in period_posts)
+                total_views = sum(post.post_views.count() for post in period_posts)
+                post_count = period_posts.count()
+                
+                # Calculate average engagement per post (prevents bias toward high-volume categories)
+                avg_engagement = (
+                    (total_likes * 3 + total_comments * 5 + total_views * 1) / max(post_count, 1)
+                )
+                
+                metrics[period] = {
+                    'posts': post_count,
+                    'likes': total_likes,
+                    'comments': total_comments, 
+                    'views': total_views,
+                    'avg_engagement': avg_engagement,
+                    'total_engagement': total_likes + total_comments + total_views
+                }
+            
+            # Advanced trending score calculation
+            # 1. Recency bias using exponential decay
+            recent_weight = 1.0
+            weekly_weight = 0.7
+            monthly_weight = 0.4
+            baseline_weight = 0.1
+            
+            # 2. Velocity calculation (recent growth vs historical average)
+            recent_engagement = metrics['recent']['avg_engagement']
+            weekly_engagement = metrics['weekly']['avg_engagement'] 
+            monthly_engagement = metrics['monthly']['avg_engagement']
+            baseline_engagement = metrics['all_time']['avg_engagement']
+            
+            # 3. Trending velocity (how much faster recent engagement is vs baseline)
+            velocity_multiplier = 1.0
+            if baseline_engagement > 0:
+                velocity_multiplier = min(recent_engagement / baseline_engagement, 5.0)  # Cap at 5x
+            
+            # 4. Consistency factor (reward sustained engagement across timeframes)
+            consistency_factor = 1.0
+            if recent_engagement > 0 and weekly_engagement > 0:
+                consistency_factor = min(recent_engagement / weekly_engagement, 2.0)
+            
+            # 5. Final trending score with multiple factors
+            trending_score = (
+                recent_engagement * recent_weight * velocity_multiplier * consistency_factor +
+                weekly_engagement * weekly_weight +
+                monthly_engagement * monthly_weight +
+                baseline_engagement * baseline_weight
             )
-            categories_with_scores.append((category, score))
-        
-        # Sort by score
-        categories_with_scores.sort(key=lambda x: x[1], reverse=True)
-        
-        # Return with engagement counts
-        trending_topics = []
-        for category, score in categories_with_scores[:limit]:
-            trending_topics.append({
-                'name': category.name,
-                'slug': category.slug,
-                'count': category.recent_posts + category.recent_likes + category.recent_comments,
-                'score': score
+            
+            # 6. Boost for categories with recent posts (content freshness)
+            if metrics['recent']['posts'] > 0:
+                trending_score *= 1.5
+            elif metrics['weekly']['posts'] > 0:
+                trending_score *= 1.2
+                
+            # 7. Real engagement count for display (weighted recent activity)
+            display_count = int(
+                metrics['recent']['total_engagement'] * 0.6 +
+                metrics['weekly']['total_engagement'] * 0.3 +
+                metrics['monthly']['total_engagement'] * 0.1
+            )
+            
+            trending_data.append({
+                'category': category,
+                'score': trending_score,
+                'display_count': max(display_count, metrics['all_time']['posts']),  # At least show post count
+                'recent_posts': metrics['recent']['posts'],
+                'weekly_posts': metrics['weekly']['posts'],
+                'velocity': velocity_multiplier,
+                'consistency': consistency_factor
             })
+        
+        # Sort by trending score (highest first)
+        trending_data.sort(key=lambda x: x['score'], reverse=True)
+        
+        # Format results for API response
+        trending_topics = []
+        for item in trending_data[:limit]:
+            trending_topics.append({
+                'name': item['category'].name,
+                'slug': item['category'].slug,
+                'count': item['display_count'],
+                'score': round(item['score'], 2),
+                'recent_posts': item['recent_posts'],
+                'velocity': round(item['velocity'], 2),
+                'consistency': round(item['consistency'], 2)
+            })
+        
+        # Only add minimal fallback if NO real data exists
+        if not trending_topics:
+            # Create basic categories if none exist
+            basic_categories = [
+                {'name': 'General', 'slug': 'general', 'count': 0, 'score': 0}
+            ]
+            return basic_categories
         
         return trending_topics
 

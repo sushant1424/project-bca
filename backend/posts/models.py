@@ -31,6 +31,7 @@ class Post(models.Model):
     image = models.URLField(blank=True, null=True)  # Optional featured image
     image_credit = models.CharField(max_length=200, blank=True, help_text="Image credit/attribution")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    categories = models.ManyToManyField(Category, blank=True, related_name='categorized_posts', help_text="Multiple categories for this post")
     is_published = models.BooleanField(default=True)
     
     # Premium Content & Monetization Features
@@ -318,7 +319,7 @@ class WritingGoal(models.Model):
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='writing_goals')
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, default='Writing Goal')
     description = models.TextField(blank=True)
     goal_type = models.CharField(max_length=20, choices=GOAL_TYPES)
     target_value = models.PositiveIntegerField(help_text="Target number to achieve")
