@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-66=5i=*c9j2=x&19*$i#!jbrg995xb!q(7c2kgfz^$pv#e@2f2'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-66=5i=*c9j2=x&19*$i#!jbrg995xb!q(7c2kgfz^$pv#e@2f2')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
@@ -53,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Whitenoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
@@ -86,12 +89,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use PostgreSQL in production, SQLite in development
+if config('DATABASE_URL', default=None):
+    DATABASES = {
+        'default': dj_database_url.parse(config('DATABASE_URL'))
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -144,8 +153,11 @@ SERVER_EMAIL = 'noreply@wrytera.com'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Whitenoise configuration for static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
@@ -206,20 +218,11 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration (for frontend communication)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite default port
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",  # Alternative Vite ports
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-    "http://localhost:5176",
-    "http://127.0.0.1:5176",
-    "http://localhost:5177",
-    "http://127.0.0.1:5177",
-    "http://localhost:3000",  # React default port
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174',
+    cast=lambda v: [s.strip() for s in v.split(',')]
+)
 
 CORS_ALLOW_CREDENTIALS = True
 

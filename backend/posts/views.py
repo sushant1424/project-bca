@@ -1051,7 +1051,7 @@ def delete_notification(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Algorithmic Recommendation Views
+
 @api_view(['GET'])
 def recommended_posts(request):
     """Get algorithmic post recommendations"""

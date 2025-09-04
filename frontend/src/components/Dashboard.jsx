@@ -13,6 +13,7 @@ import UnauthorizedAlert from './UnauthorizedAlert';
 import { useLike } from '../contexts/LikeContext';
 import { useAnalytics } from '../contexts/AnalyticsContext';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 // MyPostsSection Component
 const MyPostsSection = ({ navigate, user }) => {
@@ -923,44 +924,33 @@ const AudienceSection = ({ user }) => {
 };
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, token, loading: authLoading, isAuthenticated } = useAuth();
   const [showUnauthorized, setShowUnauthorized] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [currentUserId, setCurrentUserId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (!token || !userData) {
-      setShowUnauthorized(true);
-      return;
-    }
-    
-    try {
-      const parsedUser = JSON.parse(userData);
+    if (!authLoading) {
+      if (!isAuthenticated()) {
+        setShowUnauthorized(true);
+        return;
+      }
       
       // Check if user has changed
-      if (currentUserId && currentUserId !== parsedUser.id) {
+      if (currentUserId && currentUserId !== user?.id) {
         // User changed, clear previous user's dashboard state
         setActiveSection('home');
       }
       
-      setUser(parsedUser);
-      setCurrentUserId(parsedUser.id);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      setShowUnauthorized(true);
+      setCurrentUserId(user?.id);
+      setShowUnauthorized(false);
     }
-  }, [currentUserId]);
+  }, [user, token, authLoading, currentUserId, isAuthenticated]);
 
   // Clear state when user logs out
   useEffect(() => {
     const handleUserLogout = () => {
-      setUser(null);
       setCurrentUserId(null);
       setActiveSection('home');
       setShowUnauthorized(true);
@@ -978,7 +968,7 @@ const Dashboard = () => {
     return <UnauthorizedAlert />;
   }
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-pulse">

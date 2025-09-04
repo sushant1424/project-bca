@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const { showSuccess } = useToast();
+  const { login } = useAuth();
 
   const passwordRules = {
     minLength: formData.password.length >= 8,
@@ -110,8 +112,8 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Update AuthContext state immediately
+        login(data.user, data.token);
         
         // Show success toast message
         if (mode === 'login') {
