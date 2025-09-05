@@ -83,7 +83,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
     setErrors({});
 
     try {
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       let endpoint, payload;
       
       if (mode === 'login') {

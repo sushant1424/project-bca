@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import API_CONFIG from '../config/api';
 
 const AnalyticsContext = createContext();
 
@@ -170,7 +172,7 @@ export const AnalyticsProvider = ({ children }) => {
       // Fetch following count from backend API
       let followingCount = 0;
       try {
-        const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+        const followingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -185,7 +187,7 @@ export const AnalyticsProvider = ({ children }) => {
       }
 
       // Fetch user stats
-      const statsResponse = await fetch('http://127.0.0.1:8000/api/posts/users/stats/', {
+      const statsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/stats/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -206,7 +208,7 @@ export const AnalyticsProvider = ({ children }) => {
       }
 
       // Fetch user posts for detailed stats
-      const postsResponse = await fetch('http://127.0.0.1:8000/api/posts/users/posts/', {
+      const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/posts/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
