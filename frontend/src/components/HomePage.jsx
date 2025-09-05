@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { TrendingUp, Sparkles, Users, MessageCircle, Heart, Eye } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import PostList from './PostList';
 import RecommendationsSection from './RecommendationsSection';
 import CategoriesBar from './CategoriesBar';
@@ -23,7 +25,7 @@ const HomePage = ({
       setLoadingTrending(true);
       
       // Use algorithmic trending topics endpoint
-      const response = await fetch('http://127.0.0.1:8000/api/posts/trending-topics/?limit=5', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/trending-topics/?limit=5`, {
         headers: {
           'Authorization': token ? `Token ${token}` : undefined,
           'Content-Type': 'application/json',

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import API_CONFIG from '../config/api';
 
 const FollowContext = createContext();
 
@@ -28,7 +30,7 @@ export const FollowProvider = ({ children }) => {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -133,7 +135,7 @@ export const FollowProvider = ({ children }) => {
       setFollowingUsers(newFollowingUsers);
 
       // Call backend API
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/${userId}/follow/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

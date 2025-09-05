@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { useAnalytics } from './AnalyticsContext';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import API_CONFIG from '../config/api';
 
 const LikeContext = createContext();
 
@@ -89,7 +90,7 @@ export const LikeProvider = ({ children }) => {
     updatePostLike(postId, newLiked, newCount);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/like/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/like/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

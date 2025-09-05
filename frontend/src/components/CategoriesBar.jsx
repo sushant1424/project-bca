@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { buildApiUrl } from '../config/api';
+import { ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 import API_CONFIG from '../config/api';
+import { buildApiUrl } from '../config/api';
 
 const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
   const [categories, setCategories] = useState([]);
@@ -23,7 +23,7 @@ const CategoriesBar = ({ selectedCategory, onCategorySelect }) => {
           headers['Authorization'] = `Token ${token}`;
         }
         
-        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/?page_size=100', {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/categories/?page_size=100`, {
           headers: headers
         });
         
