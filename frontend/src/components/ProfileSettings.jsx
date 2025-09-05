@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, User, Mail, Calendar } from 'lucide-react';
+import { X, Save, User, Mail, MapPin, Link as LinkIcon, Calendar } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import ProfileImage from './ProfileImage';
 import { ToastContainer } from './ToastNotification';
 import useToast from '../hooks/useToast';
@@ -68,7 +69,7 @@ const ProfileSettings = () => {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/profile/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${token}`,

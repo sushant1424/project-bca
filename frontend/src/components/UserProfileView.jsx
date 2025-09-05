@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Calendar, MapPin } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { User, Calendar, MapPin, Link as LinkIcon, Mail } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -31,7 +32,7 @@ const UserProfileView = () => {
       }
 
       // Fetch user profile
-      const userResponse = await fetch(`http://127.0.0.1:8000/api/auth/users/${userId}/`, {
+      const userResponse = await fetch(`${API_CONFIG.BASE_URL}/api/auth/users/${userId}/`, {
         headers,
       });
 
@@ -43,7 +44,7 @@ const UserProfileView = () => {
       setUser(userData);
 
       // Fetch user's posts
-      const postsResponse = await fetch(`http://127.0.0.1:8000/api/posts/user/${userId}/`, {
+      const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/user/${userId}/`, {
         headers,
       });
 

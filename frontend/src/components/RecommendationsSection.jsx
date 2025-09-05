@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import API_CONFIG from '../config/api';
 import { useFollow } from '../contexts/FollowContext';
-import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Sparkles, TrendingUp, RefreshCw, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const RecommendationsSection = () => {
   const { user, token } = useAuth();
@@ -21,8 +22,8 @@ const RecommendationsSection = () => {
       
       // Use algorithmic recommendations for logged-in users, trending posts for non-logged-in users
       const endpoint = user 
-        ? 'http://127.0.0.1:8000/api/posts/recommendations/posts/?limit=4'
-        : 'http://127.0.0.1:8000/api/posts/trending/?limit=4';
+        ? `${API_CONFIG.BASE_URL}/api/posts/recommendations/posts/?limit=4`
+        : `${API_CONFIG.BASE_URL}/api/posts/trending/?limit=4`;
         
       const response = await fetch(endpoint, {
         headers: {
@@ -33,7 +34,7 @@ const RecommendationsSection = () => {
 
       if (!response.ok) {
         // Fallback to trending posts if recommendations fail
-        const fallbackResponse = await fetch('http://127.0.0.1:8000/api/posts/trending/?limit=4', {
+        const fallbackResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/trending/?limit=4`, {
           headers: {
             'Authorization': token ? `Token ${token}` : undefined,
             'Content-Type': 'application/json',

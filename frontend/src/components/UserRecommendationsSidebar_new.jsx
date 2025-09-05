@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import { Users } from 'lucide-react';
+import { User, UserPlus, UserCheck } from 'lucide-react';
+import API_CONFIG from '../config/api';
 
 const UserRecommendationsSidebar = () => {
   const { user, token } = useAuth();
@@ -17,7 +18,7 @@ const UserRecommendationsSidebar = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('http://127.0.0.1:8000/api/posts/?page_size=15', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/?page_size=15`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',

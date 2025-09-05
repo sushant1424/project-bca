@@ -54,7 +54,7 @@ const TrendingPage = () => {
         headers['Authorization'] = `Token ${token}`;
       }
 
-      const response = await fetch(`http://127.0.0.1:8000${API_CONFIG.ENDPOINTS.TRENDING_POSTS}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TRENDING_POSTS}`, {
         headers: headers,
       });
 

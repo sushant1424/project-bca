@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Camera, User } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, Upload, X } from 'lucide-react';
+import API_CONFIG from '../config/api';
 // import defaultAvatar from '../assets/images/default-avatar.png';
 
 // Temporary default avatar (you can replace this with your actual image path)
@@ -84,7 +85,7 @@ const ProfileImage = ({
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/auth/upload-profile-image/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/upload-profile-image/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -122,7 +123,7 @@ const ProfileImage = ({
     }
     
     // If it's a relative path, prepend backend URL
-    return `http://127.0.0.1:8000${src}`;
+    return `${API_CONFIG.BASE_URL}${src}`;
   };
 
   return (

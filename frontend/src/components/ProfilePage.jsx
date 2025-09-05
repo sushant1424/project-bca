@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Edit3, Globe, Users, FileText, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Calendar, MapPin, Link as LinkIcon, Mail, Edit, Settings, Plus, Heart, MessageCircle, Eye, Bookmark } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -70,7 +71,7 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/posts/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/posts/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
@@ -152,7 +153,7 @@ const ProfilePage = () => {
 
 
 
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/profile/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${token}`,

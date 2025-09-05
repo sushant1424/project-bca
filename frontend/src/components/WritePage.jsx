@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Send, Image as ImageIcon, Tag, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { X, Plus, Edit3, Save, Eye, EyeOff, Loader2 } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SubstackEditor from './SubstackEditor';
 import { useToast } from '../context/ToastContext';
@@ -89,7 +91,7 @@ const WritePage = ({ onPostCreated }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -166,7 +168,7 @@ const WritePage = ({ onPostCreated }) => {
           headers['Authorization'] = `Token ${token}`;
         }
         
-        const response = await fetch('http://127.0.0.1:8000/api/posts/categories/?page_size=100', {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/categories/?page_size=100`, {
           headers
         });
         console.log('Categories API response status:', response.status);
@@ -245,7 +247,7 @@ const WritePage = ({ onPostCreated }) => {
     setIsCreatingCategory(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/api/posts/categories/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/categories/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -303,8 +305,8 @@ const WritePage = ({ onPostCreated }) => {
     try {
       const token = localStorage.getItem('token');
       const url = isEditing 
-        ? `http://127.0.0.1:8000/api/posts/${editingPostId}/`
-        : 'http://127.0.0.1:8000/api/posts/';
+        ? `${API_CONFIG.BASE_URL}/api/posts/${editingPostId}/`
+        : `${API_CONFIG.BASE_URL}/api/posts/`;
       const method = isEditing ? 'PUT' : 'POST';
       
       const response = await fetch(url, {

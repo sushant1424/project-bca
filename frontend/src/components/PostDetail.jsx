@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import API_CONFIG from '../config/api';
 import { X, Heart, MessageCircle, User, Calendar, Bookmark, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { authenticatedFetch, buildApiUrl } from '../config/api';
-import API_CONFIG from '../config/api';
 import useToast from '../hooks/useToast';
 import { ToastContainer } from './ToastNotification';
 import PremiumBadge from './PremiumBadge';
@@ -50,7 +50,7 @@ const PostDetail = () => {
         headers['Authorization'] = `Token ${token}`;
       }
 
-      await fetch(`http://127.0.0.1:8000/api/posts/${postId}/view/`, {
+      await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/view/`, {
         method: 'POST',
         headers: headers,
       });
@@ -72,7 +72,7 @@ const PostDetail = () => {
         headers['Authorization'] = `Token ${token}`;
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/`, {
         headers: headers,
       });
 
@@ -106,7 +106,7 @@ const PostDetail = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/like/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/like/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -196,7 +196,7 @@ const PostDetail = () => {
       const token = localStorage.getItem('token');
       const wasFollowing = post.is_following_author;
       
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${post.author.id}/follow/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/${post.author.id}/follow/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -242,7 +242,7 @@ const PostDetail = () => {
       
       console.log('Submitting comment:', { postId, content: newComment, token: token ? 'present' : 'missing' });
       
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/comments/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/comments/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

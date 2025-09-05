@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
+import { User, UserPlus, UserCheck } from 'lucide-react';
+import API_CONFIG from '../config/api';
+import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
@@ -26,7 +27,7 @@ const UserRecommendationsSidebar = () => {
       const token = localStorage.getItem('token');
       
       // Use algorithmic user recommendations endpoint
-      const response = await fetch('http://127.0.0.1:8000/api/posts/recommendations/users/?limit=5', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/recommendations/users/?limit=5`, {
         headers: {
           'Authorization': token ? `Token ${token}` : undefined,
           'Content-Type': 'application/json'
@@ -39,7 +40,7 @@ const UserRecommendationsSidebar = () => {
         setRecommendedUsers(data.slice(0, 5));
       } else {
         // Fallback: fetch all users and filter
-        const allUsersResponse = await fetch('http://127.0.0.1:8000/api/posts/users/', {
+        const allUsersResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/`, {
           headers: {
             'Authorization': token ? `Token ${token}` : undefined,
             'Content-Type': 'application/json'

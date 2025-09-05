@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { User, Calendar, MapPin, Link as LinkIcon, Mail, MessageCircle, UserPlus, UserCheck, Edit } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
 import { Button } from './ui/button';
@@ -66,7 +68,7 @@ const UserProfile = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${username}/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/${username}/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -93,7 +95,7 @@ const UserProfile = () => {
       const token = localStorage.getItem('token');
       const userId = user.id;
       
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/user/${userId}/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/user/${userId}/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'

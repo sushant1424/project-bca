@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, User, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
+import API_CONFIG from '../config/api';
 import Post from './Post';
 import { useLike } from '../contexts/LikeContext';
 import { useToast } from '../context/ToastContext';
@@ -48,9 +50,9 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       }
       
       // Build URL with pagination and category filter
-      let url = `http://127.0.0.1:8000/api/posts/?page=${page}`;
+      let url = `${API_CONFIG.BASE_URL}/api/posts/?page=${page}`;
       if (selectedCategory) {
-        url = `http://127.0.0.1:8000/api/posts/categories/${selectedCategory}/?page=${page}`;
+        url = `${API_CONFIG.BASE_URL}/api/posts/categories/${selectedCategory}/?page=${page}`;
       }
       
       const response = await fetch(url, {
@@ -157,7 +159,7 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       if (authToken && uniqueAuthorIds.length > 0) {
         try {
           // Fetch current user's following list
-          const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+          const followingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
             headers: {
               'Authorization': `Token ${authToken}`,
               'Content-Type': 'application/json'
@@ -210,7 +212,7 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       const isCurrentlyFollowing = currentPost?.author?.is_following || false;
       
       // Call backend API to follow/unfollow user
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/${userId}/follow/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -284,7 +286,7 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
 
       console.log('Posting comment:', { postId, commentText, token: token ? 'present' : 'missing' });
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/comments/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/comments/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -345,7 +347,7 @@ const PostList = ({ selectedCategory, refreshTrigger, searchQuery, searchResults
       }
 
       // Call backend API to save/unsave post
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/save/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/save/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
