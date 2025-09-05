@@ -305,7 +305,7 @@ const PostDetail = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/save/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/save/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

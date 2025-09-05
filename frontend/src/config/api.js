@@ -1,7 +1,8 @@
-// API Configuration - Force production URL
-console.log('Environment:', import.meta.env.MODE, 'API URL:', import.meta.env.VITE_API_BASE_URL);
+// API Configuration - FORCE PRODUCTION BUILD v2.0
+console.log('🚀 PRODUCTION BUILD v2.0 - Environment:', import.meta.env.MODE, 'API URL:', import.meta.env.VITE_API_BASE_URL);
+const PRODUCTION_API_URL = 'https://wrytera.netlify.app';
 const API_CONFIG = {
-  BASE_URL: 'https://wrytera.netlify.app', // Force production URL
+  BASE_URL: PRODUCTION_API_URL, // FORCE PRODUCTION URL - NO LOCALHOST
   ENDPOINTS: {
     // Authentication
     LOGIN: '/api/auth/login/',

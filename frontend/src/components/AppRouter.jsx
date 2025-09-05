@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import API_CONFIG from '../config/api';
 import ErrorBoundary from './ErrorBoundary';
 import { AuthProvider } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
@@ -60,7 +61,7 @@ const AppRouter = ({ sidebarCollapsed, onToggleSidebar }) => {
         headers['Authorization'] = `Token ${token}`;
       }
       
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/search/?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/search/?q=${encodeURIComponent(query)}`, {
         headers: headers,
       });
 
