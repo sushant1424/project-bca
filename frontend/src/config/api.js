@@ -1,6 +1,7 @@
-// API Configuration
+// API Configuration - Force production URL
+console.log('Environment:', import.meta.env.MODE, 'API URL:', import.meta.env.VITE_API_BASE_URL);
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://wrytera.netlify.app',
+  BASE_URL: 'https://wrytera.netlify.app', // Force production URL
   ENDPOINTS: {
     // Authentication
     LOGIN: '/api/auth/login/',
