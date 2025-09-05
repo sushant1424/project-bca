@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Image, Send } from 'lucide-react';
+import { X, Send } from 'lucide-react';
+import API_CONFIG from '../config/api';
 
 const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
   const [formData, setFormData] = useState({
@@ -44,7 +45,7 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/posts/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
