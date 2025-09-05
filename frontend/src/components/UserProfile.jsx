@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/Badge';
+import { Badge } from './ui/badge';
 import { 
   User, 
   MapPin, 
