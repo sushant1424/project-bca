@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { useToast } from '../context/ToastContext';
+import API_CONFIG from '../config/api';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin = ({ onLoginSuccess }) => {
   const [loginData, setLoginData] = useState({ username: '', password: '' });
@@ -27,7 +32,7 @@ const AdminLogin = ({ onLoginSuccess }) => {
                         loginData.username === 'admin1' ? 'admin1@gmail.com' : 
                         `${loginData.username}@gmail.com`;
       
-      const loginResponse = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +117,7 @@ const AdminLogin = ({ onLoginSuccess }) => {
     }
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/create-admin/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/create-admin/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

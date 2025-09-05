@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLike } from '../contexts/LikeContext';
@@ -60,21 +61,21 @@ const RecommendationsPage = () => {
       setLoading(true);
       
       // Use algorithmic recommendations endpoints
-      const postResponse = await fetch('http://127.0.0.1:8000/api/posts/recommendations/posts/?limit=15', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/recommendations/posts/?limit=15`, {
         headers: {
           'Authorization': token ? `Token ${token}` : undefined,
           'Content-Type': 'application/json',
         },
       });
 
-      if (postResponse.ok) {
-        const postData = await postResponse.json();
+      if (response.ok) {
+        const postData = await response.json();
         setPostRecommendations(postData.slice(0, 15));
         // Initialize likes for the posts
         initializePostLikes(postData.slice(0, 15));
       } else {
         // Fallback to trending posts
-        const fallbackResponse = await fetch('http://127.0.0.1:8000/api/posts/trending/?limit=15', {
+        const fallbackResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/trending/?limit=15`, {
           headers: {
             'Authorization': token ? `Token ${token}` : undefined,
             'Content-Type': 'application/json',

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Search, TrendingUp, BarChart3, Users, UserCheck, Loader2 } from 'lucide-react';
 import Post from './Post';
 import { ToastContainer } from './ToastNotification';
@@ -62,7 +64,7 @@ const FollowingPage = () => {
 
       // Try API first, then fallback
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/posts/following-feed/', {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -90,7 +92,7 @@ const FollowingPage = () => {
       let allPosts = [];
       for (let page = 1; page <= 3; page++) {
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/posts/?page=${page}`, {
+          const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/?page=${page}`, {
             headers: {
               'Authorization': `Token ${token}`,
               'Content-Type': 'application/json',

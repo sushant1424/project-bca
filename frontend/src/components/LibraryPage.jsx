@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark, Search, User, Menu, ArrowLeft } from 'lucide-react';
 import Post from './Post';
@@ -58,7 +59,7 @@ const LibraryPage = () => {
       }
 
       // Call the backend API to get user's saved posts
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/library/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/library/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -78,7 +79,7 @@ const LibraryPage = () => {
         
         try {
           // Fetch current user's following list
-          const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+          const followingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
             headers: {
               'Authorization': `Token ${token}`,
               'Content-Type': 'application/json'
@@ -134,7 +135,7 @@ const LibraryPage = () => {
       }
 
       // Call backend API to save/unsave post
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/save/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${postId}/save/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -185,7 +186,7 @@ const LibraryPage = () => {
       const postWithAuthor = posts.find(post => post.author?.id === userId);
       const isCurrentlyFollowing = postWithAuthor?.author?.is_following || false;
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/users/${userId}/follow/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/${userId}/follow/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

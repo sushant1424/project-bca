@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -55,7 +56,7 @@ const MyPostsSection = ({ navigate, user }) => {
       if (!token) return;
 
       // Use the dedicated endpoint for current user's posts
-      const apiUrl = `http://127.0.0.1:8000/api/posts/users/posts/`;
+      const apiUrl = `${API_CONFIG.BASE_URL}/api/posts/users/posts/`;
       
       const response = await fetch(apiUrl, {
         headers: {
@@ -141,7 +142,7 @@ const MyPostsSection = ({ navigate, user }) => {
         return;
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/posts/${deleteConfirm}/`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/${deleteConfirm}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${token}`,
@@ -487,7 +488,7 @@ const HomeSection = ({ navigate, user, setActiveSection }) => {
       if (!token) return;
 
       // Fetch all posts and filter by current user
-      const postsResponse = await fetch(`http://127.0.0.1:8000/api/posts/?page_size=100`, {
+      const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/?page_size=100`, {
         headers: { 'Authorization': `Token ${token}` }
       });
       if (postsResponse.ok) {
@@ -512,7 +513,7 @@ const HomeSection = ({ navigate, user, setActiveSection }) => {
       // Get following count from backend API
       let followingCount = 0;
       try {
-        const followingResponse = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+        const followingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -531,7 +532,7 @@ const HomeSection = ({ navigate, user, setActiveSection }) => {
       
       try {
         // Attempt to get more accurate follower data if API supports it
-        const profileResponse = await fetch(`http://127.0.0.1:8000/api/auth/user/`, {
+        const profileResponse = await fetch(`${API_CONFIG.BASE_URL}/api/auth/user/`, {
           headers: { 'Authorization': `Token ${token}` }
         });
         if (profileResponse.ok) {
@@ -725,7 +726,7 @@ const AnalyticsSection = ({ user }) => {
       if (!token) return;
 
       // Fetch user's posts for top posts calculation
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/posts/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/posts/`, {
         headers: { 'Authorization': `Token ${token}` }
       });
 

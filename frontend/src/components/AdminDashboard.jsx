@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import AddUserModal from './AddUserModal';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Badge } from './ui/badge';
+import { Trash2, Edit, Eye, Users, FileText, TrendingUp, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,13 +24,13 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { useToast } from '../context/ToastContext';
-import { 
-  Users, 
-  FileText, 
-  MessageSquare, 
-  Eye, 
-  Heart, 
-  TrendingUp, 
+import {
+  Users,
+  FileText,
+  MessageSquare,
+  Eye,
+  Heart,
+  TrendingUp,
   Calendar,
   Search,
   Filter,
@@ -63,7 +63,7 @@ const CommentManagement = ({ users, posts, comments, searchTerm, setSearchTerm, 
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -90,7 +90,7 @@ const CommentManagement = ({ users, posts, comments, searchTerm, setSearchTerm, 
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -322,7 +322,7 @@ const CategoryManagement = ({ categories, searchTerm, setSearchTerm, currentPage
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -361,7 +361,7 @@ const CategoryManagement = ({ categories, searchTerm, setSearchTerm, currentPage
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -415,7 +415,7 @@ const CategoryManagement = ({ categories, searchTerm, setSearchTerm, currentPage
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -447,7 +447,7 @@ const CategoryManagement = ({ categories, searchTerm, setSearchTerm, currentPage
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -767,7 +767,7 @@ const AdminDashboard = ({ adminUser }) => {
       const adminToken = localStorage.getItem('adminToken');
       if (adminToken) {
         // Only logout the admin token, don't affect user session
-        await fetch('http://127.0.0.1:8000/api/auth/logout/', {
+        await fetch(`${API_CONFIG.BASE_URL}/api/auth/logout/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -862,7 +862,7 @@ const AdminDashboard = ({ adminUser }) => {
   const fetchUsers = async (page = 1, search = '') => {
     try {
       const adminToken = localStorage.getItem('adminToken'); // Use admin token
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -922,7 +922,7 @@ const AdminDashboard = ({ adminUser }) => {
       
       console.log('Sending signup request with data:', requestData);
       
-      const response = await fetch('http://127.0.0.1:8000/api/auth/signup/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/signup/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -983,7 +983,7 @@ const AdminDashboard = ({ adminUser }) => {
         console.error('No admin token found');
         return;
       }
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -1039,7 +1039,7 @@ const AdminDashboard = ({ adminUser }) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -1067,7 +1067,7 @@ const AdminDashboard = ({ adminUser }) => {
         console.error('No admin token found');
         return;
       }
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -1092,7 +1092,7 @@ const AdminDashboard = ({ adminUser }) => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('adminToken'); // Use admin token
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${token}`
@@ -1123,7 +1123,7 @@ const AdminDashboard = ({ adminUser }) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -1156,7 +1156,7 @@ const AdminDashboard = ({ adminUser }) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`
@@ -1186,7 +1186,7 @@ const AdminDashboard = ({ adminUser }) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) return;
-      const baseURL = 'http://127.0.0.1:8000';
+      const baseURL = API_CONFIG.BASE_URL;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Token ${adminToken}`

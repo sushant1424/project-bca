@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_CONFIG from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Clock, User, Sparkles, TrendingUp } from 'lucide-react';
 
@@ -22,7 +23,7 @@ const FollowingFeed = ({ user }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://127.0.0.1:8000/api/posts/following-feed/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/following-feed/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import API_CONFIG from '../config/api';
+import { useNavigate } from 'react-router-dom';
+import { User, Calendar, MapPin, Link as LinkIcon, Mail, Edit, Settings, Plus, Heart, MessageCircle, Eye, Bookmark, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Edit, MapPin, Calendar, Link as LinkIcon } from 'lucide-react';
+import { Badge } from './ui/badge';
 import Post from './Post';
 
 const MyProfile = () => {
@@ -22,7 +24,7 @@ const MyProfile = () => {
   const fetchUserPosts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/api/posts/my-posts/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/posts/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

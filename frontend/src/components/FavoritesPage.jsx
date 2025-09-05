@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Heart, MessageCircle, Eye, Search, Filter } from 'lucide-react';
-import { authenticatedFetch } from '../config/api';
 import API_CONFIG from '../config/api';
+import { useNavigate } from 'react-router-dom';
+import { Heart, Search, User, Menu, ArrowLeft } from 'lucide-react';
+import Post from './Post';
+import { ToastContainer } from './ToastNotification';
+import useToast from '../hooks/useToast';
 
 const FavoritesPage = () => {
   const [posts, setPosts] = useState([]);
@@ -28,7 +31,7 @@ const FavoritesPage = () => {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/favorites/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/favorites/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'

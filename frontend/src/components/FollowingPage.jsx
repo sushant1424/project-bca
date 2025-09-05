@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Search, TrendingUp, BarChart3, Users, UserCheck, Loader2, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
-import AuthModal from './AuthModal';
+import API_CONFIG from '../config/api';
 import { useNavigate } from 'react-router-dom';
+import { Users, Search, User, Menu, ArrowLeft } from 'lucide-react';
 import Post from './Post';
 import { ToastContainer } from './ToastNotification';
 import useToast from '../hooks/useToast';
@@ -69,7 +69,7 @@ const FollowingPage = () => {
       if (!token) return;
 
       // Call the backend API to get the current user's following list
-      const response = await fetch('http://127.0.0.1:8000/api/posts/users/following/', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/users/following/`, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ const FollowingPage = () => {
 
       // Call backend API to get following feed posts
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/posts/following-feed/', {
+        const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/posts/following-feed/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ const FollowingPage = () => {
       let allPosts = [];
       for (let page = 1; page <= 3; page++) {
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/posts/?page=${page}`, {
+          const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/?page=${page}`, {
             headers: {
               'Authorization': `Token ${token}`,
               'Content-Type': 'application/json',
