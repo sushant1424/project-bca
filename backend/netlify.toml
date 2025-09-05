@@ -1,6 +1,6 @@
 [build]
-  command = "python -m pip install --upgrade pip && pip install -r requirements-netlify.txt"
-  publish = "."
+  command = "python -m pip install --upgrade pip && pip install -r backend/requirements-netlify.txt"
+  publish = "backend"
 
 [functions]
   directory = "netlify/functions"
