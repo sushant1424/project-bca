@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://wrytera.netlify.app' : 'http://127.0.0.1:8000'),
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://wrytera.netlify.app',
   ENDPOINTS: {
     // Authentication
     LOGIN: '/api/auth/login/',
