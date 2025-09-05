@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/Badge';
+import { Badge } from './ui/badge';
 import { Sparkles, TrendingUp, RefreshCw, ChevronRight } from 'lucide-react';
 
 const RecommendationsSection = () => {
