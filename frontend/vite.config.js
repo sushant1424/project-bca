@@ -4,21 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'esbuild',
+    outDir: 'build',
     rollupOptions: {
       output: {
-        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-        assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`,
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-alert-dialog']
-        }
+        entryFileNames: `assets/app-${Date.now()}-[hash].js`,
+        chunkFileNames: `assets/chunk-${Date.now()}-[hash].js`,
+        assetFileNames: `assets/asset-${Date.now()}-[hash].[ext]`
       }
     }
   },
