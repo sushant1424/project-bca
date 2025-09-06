@@ -1,41 +1,92 @@
+import json
 import os
 import sys
-import django
-from django.core.wsgi import get_wsgi_application
+from urllib.parse import unquote
 
-# Add the backend directory to Python path
-sys.path.append('/opt/build/repo')
+# Add the project root to Python path
+sys.path.insert(0, '/opt/build/repo')
 
-# Set Django settings
+# Set up Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 
-# Initialize Django
+import django
 django.setup()
 
-# Get WSGI application
-application = get_wsgi_application()
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse
+from django.urls import resolve
+from django.core.handlers.base import BaseHandler
 
 def handler(event, context):
-    """Netlify function handler for Django"""
-    from django.http import HttpRequest
-    from django.urls import resolve
-    from django.core.handlers.wsgi import WSGIRequest
+    """Netlify serverless function handler for Django"""
     
-    # Create Django request from Netlify event
-    request = HttpRequest()
-    request.method = event.get('httpMethod', 'GET')
-    request.path = event.get('path', '/')
+    # Get request details from Netlify event
+    http_method = event.get('httpMethod', 'GET')
+    path = event.get('path', '/')
+    query_string = event.get('queryStringParameters') or {}
+    headers = event.get('headers', {})
+    body = event.get('body', '')
     
-    # Handle the request through Django
-    response = application(request.environ, lambda status, headers: None)
+    # Remove /api prefix if present (since Netlify redirects handle this)
+    if path.startswith('/api'):
+        path = path[4:]
+    if not path.startswith('/'):
+        path = '/' + path
+    
+    # Build query string
+    query_params = []
+    for key, value in query_string.items():
+        if value is not None:
+            query_params.append(f"{key}={value}")
+    query_string_final = '&'.join(query_params)
+    
+    # Create WSGI environ
+    environ = {
+        'REQUEST_METHOD': http_method,
+        'PATH_INFO': unquote(path),
+        'QUERY_STRING': query_string_final,
+        'CONTENT_TYPE': headers.get('content-type', ''),
+        'CONTENT_LENGTH': str(len(body)) if body else '0',
+        'SERVER_NAME': 'wrytera.netlify.app',
+        'SERVER_PORT': '443',
+        'wsgi.version': (1, 0),
+        'wsgi.url_scheme': 'https',
+        'wsgi.input': None,
+        'wsgi.errors': sys.stderr,
+        'wsgi.multithread': False,
+        'wsgi.multiprocess': True,
+        'wsgi.run_once': False,
+    }
+    
+    # Add headers to environ
+    for key, value in headers.items():
+        key = key.upper().replace('-', '_')
+        if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+            environ[f'HTTP_{key}'] = value
+    
+    # Handle request body
+    if body:
+        from io import StringIO
+        environ['wsgi.input'] = StringIO(body)
+    
+    # Create Django request
+    request = WSGIRequest(environ)
+    
+    # Get Django response
+    from django.core.handlers.wsgi import WSGIHandler
+    handler = WSGIHandler()
+    response = handler(request)
+    
+    # Convert Django response to Netlify format
+    response_body = b''.join(response).decode('utf-8')
     
     return {
-        'statusCode': 200,
+        'statusCode': response.status_code,
         'headers': {
-            'Content-Type': 'application/json',
+            'Content-Type': response.get('Content-Type', 'application/json'),
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
         },
-        'body': ''.join(response)
+        'body': response_body
     }

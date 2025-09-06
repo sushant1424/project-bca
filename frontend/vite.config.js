@@ -9,9 +9,9 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        entryFileNames: `assets/index-[hash].js`,
-        chunkFileNames: `assets/[name]-[hash].js`,
-        assetFileNames: `assets/[name]-[hash].[ext]`,
+        entryFileNames: `assets/index-${Date.now()}-[hash].js`,
+        chunkFileNames: `assets/[name]-${Date.now()}-[hash].js`,
+        assetFileNames: `assets/[name]-${Date.now()}-[hash].[ext]`,
         manualChunks: undefined
       }
     }
