@@ -1,17 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'build',
+    outDir: 'dist',
+    sourcemap: false,
     rollupOptions: {
       output: {
-        entryFileNames: `assets/app-${Date.now()}-[hash].js`,
-        chunkFileNames: `assets/chunk-${Date.now()}-[hash].js`,
-        assetFileNames: `assets/asset-${Date.now()}-[hash].[ext]`
+        entryFileNames: `assets/index-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`,
+        manualChunks: undefined
       }
     }
   },
