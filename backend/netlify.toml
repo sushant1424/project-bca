@@ -1,5 +1,5 @@
 [build]
-  command = "pip install --upgrade pip && pip install -r requirements-netlify.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput"
+  command = "pip install -r requirements-netlify.txt"
   publish = "."
 
 [functions]
@@ -7,10 +7,5 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
