@@ -419,7 +419,10 @@ def forgot_password(request):
         
         # Send password reset email
         try:
-            reset_url = f"http://localhost:5173/reset-password?token={reset_token}"
+            # Build password reset URL for frontend
+            from django.conf import settings
+            frontend_base = os.getenv('FRONTEND_URL') or 'https://project-bca.vercel.app'
+            reset_url = f"{frontend_base.rstrip('/')}/reset-password?token={reset_token}"
             subject = 'Reset Your Wrytera Password'
             message = f"""
 Hi {user.first_name or user.username},
