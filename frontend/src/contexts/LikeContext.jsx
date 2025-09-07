@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useAnalytics } from './AnalyticsContext';
 import API_CONFIG from '../config/api';
 
 const LikeContext = createContext();
