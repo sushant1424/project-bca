@@ -1,77 +1,29 @@
-# Wrytera Backend
+# Backend – Django REST API
 
-Django REST API backend for the Wrytera content platform.
+Django 5 + DRF API for posts, comments, likes, saves, categories and auth.
 
-## Setup Instructions
-
-### 1. Install Dependencies
+## Quick start
 ```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### 2. Run Migrations
-```bash
-python manage.py makemigrations
+# Optional: backend/.env (SQLite works without)
+# SECRET_KEY=dev
+# DEBUG=True
+# ALLOWED_HOSTS=localhost,127.0.0.1
+# CORS_ALLOWED_ORIGINS=http://localhost:5173
+# CSRF_TRUSTED_ORIGINS=http://localhost:5173
+
 python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
 ```
 
-### 3. Create Superuser (Optional)
-```bash
-python manage.py createsuperuser
-```
+## Useful commands
+- `python manage.py createsuperuser`
+- `python manage.py collectstatic` (prod)
 
-### 4. Run Development Server
-```bash
-python manage.py runserver
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/signup/` - User registration
-- `POST /api/auth/login/` - User login
-- `GET /api/auth/profile/` - Get user profile (requires authentication)
-
-### Signup Request Format
-```json
-{
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "SecurePass123!",
-  "confirm_password": "SecurePass123!",
-  "first_name": "John",
-  "last_name": "Doe"
-}
-```
-
-### Login Request Format
-```json
-{
-  "email": "john@example.com",
-  "password": "SecurePass123!"
-}
-```
-
-## Features
-
-- **Custom User Model**: Extended with bio, avatar, social links
-- **JWT Authentication**: Secure token-based authentication
-- **Password Validation**: Strong password requirements
-- **CORS Support**: Frontend communication enabled
-- **Admin Interface**: Full Django admin integration
-
-## Password Requirements
-
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one number
-- At least one special character
-
-## Development
-
-The backend is configured for development with:
-- SQLite database
-- CORS enabled for frontend
-- JWT tokens for authentication
-- Comprehensive validation 
+## Deployment
+- Railway: set `DATABASE_URL`, `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `FRONTEND_URL`
+- Start command (Railway): `python manage.py migrate && python manage.py collectstatic --noinput && gunicorn core.wsgi` 
