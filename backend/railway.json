@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python manage.py makemigrations --noinput && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn core.wsgi",
+    "startCommand": "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn core.wsgi",
     "healthcheckPath": "/api/posts/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
