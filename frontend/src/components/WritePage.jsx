@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { X, Plus, Edit3, Save, Eye, EyeOff, Loader2 } from 'lucide-react';
 import API_CONFIG from '../config/api';
-import { useLocation, useNavigate } from 'react-router-dom';
 import SubstackEditor from './SubstackEditor';
 import { useToast } from '../context/ToastContext';
 import {

@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Calendar, MapPin, Link as LinkIcon, Mail, MessageCircle, UserPlus, UserCheck, Edit } from 'lucide-react';
+import { 
+  User, 
+  Calendar, 
+  MapPin, 
+  Link as LinkIcon, 
+  Mail, 
+  MessageCircle, 
+  UserPlus, 
+  UserCheck, 
+  Edit,
+  Globe, 
+  Twitter, 
+  Linkedin,
+  Users,
+  FileText,
+  Heart,
+  Eye,
+  Settings,
+  Camera,
+  ArrowLeft
+} from 'lucide-react';
 import API_CONFIG from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useFollow } from '../contexts/FollowContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { 
-  User, 
-  MapPin, 
-  Calendar, 
-  Globe, 
-  Twitter, 
-  Linkedin,
-  Mail,
-  Users,
-  FileText,
-  Heart,
-  MessageCircle,
-  Eye,
-  Settings,
-  Camera,
-  ArrowLeft
-} from 'lucide-react';
 
 const UserProfile = () => {
   const { username } = useParams();

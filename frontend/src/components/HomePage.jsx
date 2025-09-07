@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, Users, MessageCircle, Heart, Eye } from 'lucide-react';
+import { TrendingUp, Sparkles, Users, MessageCircle, Heart, Eye, RefreshCw } from 'lucide-react';
 import API_CONFIG from '../config/api';
 import PostList from './PostList';
 import RecommendationsSection from './RecommendationsSection';
 import CategoriesBar from './CategoriesBar';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, RefreshCw } from 'lucide-react';
 
 const HomePage = ({ 
   selectedCategory, 

@@ -90,10 +90,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use PostgreSQL for production (Railway) and SQLite for local development
-if config('DATABASE_URL', default=None):
+DATABASE_URL = config('DATABASE_URL', default=None)
+if DATABASE_URL:
     # Production database (Railway provides DATABASE_URL)
     DATABASES = {
-        'default': dj_database_url.parse(config('DATABASE_URL'))
+        'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
     # Local development database
