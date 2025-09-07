@@ -31,6 +31,17 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,wrytera.netlify.app,*.railway.app,healthcheck.railway.app', cast=lambda v: [s.strip() for s in v.split(',')])
 
+# Trust proxy headers from Railway/Nginx so Django builds correct absolute URLs
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CSRF trusted origins for browser POSTs from frontend
+CSRF_TRUSTED_ORIGINS = config(
+	'CSRF_TRUSTED_ORIGINS',
+	default='https://*.railway.app,https://*.netlify.app',
+	cast=lambda v: [s.strip() for s in v.split(',')]
+)
+
 
 # Application definition
 
